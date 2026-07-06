@@ -1,20 +1,21 @@
+import { Context } from "./context";
 import { refreshActiveHighlight } from "./highlight";
-import { emit } from "./emitter";
-import { getState, setState } from "./state";
-import { getConfig } from "./config";
 import { getFocusableElements } from "./utils";
 
-export function requireRefresh() {
-  const resizeTimeout = getState("__resizeTimeout");
+export function requireRefresh(ctx: Context) {
+  const resizeTimeout = ctx.getState("__resizeTimeout");
   if (resizeTimeout) {
     window.cancelAnimationFrame(resizeTimeout);
   }
 
-  setState("__resizeTimeout", window.requestAnimationFrame(refreshActiveHighlight));
+  ctx.setState(
+    "__resizeTimeout",
+    window.requestAnimationFrame(() => refreshActiveHighlight(ctx))
+  );
 }
 
-function trapFocus(e: KeyboardEvent) {
-  const isActivated = getState("isInitialized");
+function trapFocus(ctx: Context, e: KeyboardEvent) {
+  const isActivated = ctx.getState("isInitialized");
   if (!isActivated) {
     return;
   }
@@ -24,8 +25,8 @@ function trapFocus(e: KeyboardEvent) {
     return;
   }
 
-  const activeElement = getState("__activeElement");
-  const popoverEl = getState("popover")?.wrapper;
+  const activeElement = ctx.getState("__activeElement");
+  const popoverEl = ctx.getState("popover")?.wrapper;
 
   const focusableEls = getFocusableElements([
     ...(popoverEl ? [popoverEl] : []),
@@ -48,19 +49,19 @@ function trapFocus(e: KeyboardEvent) {
   }
 }
 
-function onKeyup(e: KeyboardEvent) {
-  const allowKeyboardControl = getConfig("allowKeyboardControl") ?? true;
+function onKeyup(ctx: Context, e: KeyboardEvent) {
+  const allowKeyboardControl = ctx.getConfig("allowKeyboardControl") ?? true;
 
   if (!allowKeyboardControl) {
     return;
   }
 
   if (e.key === "Escape") {
-    emit("escapePress");
+    ctx.emit("escapePress");
   } else if (e.key === "ArrowRight") {
-    emit("arrowRightPress");
+    ctx.emit("arrowRightPress");
   } else if (e.key === "ArrowLeft") {
-    emit("arrowLeftPress");
+    ctx.emit("arrowLeftPress");
   }
 }
 
@@ -125,16 +126,36 @@ export function destroyDriverClick(element: Element) {
   driverClickHandlers.delete(element);
 }
 
-export function initEvents() {
-  window.addEventListener("keyup", onKeyup, false);
-  window.addEventListener("keydown", trapFocus, false);
-  window.addEventListener("resize", requireRefresh);
-  window.addEventListener("scroll", requireRefresh);
+export function initEvents(ctx: Context) {
+  // The handlers close over this instance's context and are stashed in state so
+  // destroyEvents can detach the very same references, keeping instances from
+  // removing each other's listeners.
+  const onWindowKeyup = (e: KeyboardEvent) => onKeyup(ctx, e);
+  const onWindowKeydown = (e: KeyboardEvent) => trapFocus(ctx, e);
+  const onWindowResize = () => requireRefresh(ctx);
+  const onWindowScroll = () => requireRefresh(ctx);
+
+  ctx.setState("__events", {
+    onKeyup: onWindowKeyup,
+    onKeydown: onWindowKeydown,
+    onResize: onWindowResize,
+    onScroll: onWindowScroll,
+  });
+
+  window.addEventListener("keyup", onWindowKeyup, false);
+  window.addEventListener("keydown", onWindowKeydown, false);
+  window.addEventListener("resize", onWindowResize);
+  window.addEventListener("scroll", onWindowScroll);
 }
 
-export function destroyEvents() {
-  window.removeEventListener("keyup", onKeyup);
-  window.removeEventListener("keydown", trapFocus);
-  window.removeEventListener("resize", requireRefresh);
-  window.removeEventListener("scroll", requireRefresh);
+export function destroyEvents(ctx: Context) {
+  const events = ctx.getState("__events");
+  if (!events) {
+    return;
+  }
+
+  window.removeEventListener("keyup", events.onKeyup);
+  window.removeEventListener("keydown", events.onKeydown);
+  window.removeEventListener("resize", events.onResize);
+  window.removeEventListener("scroll", events.onScroll);
 }

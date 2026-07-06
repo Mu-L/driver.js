@@ -1,4 +1,4 @@
-import { getConfig } from "./config";
+import type { Context } from "./context";
 
 export function isScrollable(element: Element) {
   const style = window.getComputedStyle(element);
@@ -30,12 +30,12 @@ export function getFocusableElements(parentEls: Element[] | HTMLElement[]) {
     });
 }
 
-export function bringInView(element: Element) {
+export function bringInView(ctx: Context, element: Element) {
   if (!element || isElementInView(element)) {
     return;
   }
 
-  const shouldSmoothScroll = getConfig("smoothScroll");
+  const shouldSmoothScroll = ctx.getConfig("smoothScroll");
 
   const isTallerThanViewport = (element as HTMLElement).offsetHeight > window.innerHeight;
 

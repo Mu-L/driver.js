@@ -40,7 +40,7 @@ export type Config = {
   doneBtnText?: string;
 
   // Called after the popover is rendered
-  onPopoverRender?: (popover: PopoverDOM, opts: { config: Config; state: State, driver: Driver }) => void;
+  onPopoverRender?: (popover: PopoverDOM, opts: { config: Config; state: State; driver: Driver }) => void;
 
   // State based callbacks, called upon state changes
   onHighlightStarted?: DriverHook;
@@ -56,40 +56,47 @@ export type Config = {
   onDoneClick?: DriverHook;
 };
 
-let currentConfig: Config = {};
-let currentDriver: Driver;
-
-export function configure(config: Config = {}) {
-  currentConfig = {
-    animate: true,
-    duration: 400,
-    allowClose: true,
-    allowScroll: true,
-    overlayClickBehavior: "close",
-    overlayOpacity: 0.7,
-    smoothScroll: false,
-    disableActiveInteraction: false,
-    showProgress: false,
-    stagePadding: 10,
-    stageRadius: 5,
-    popoverOffset: 10,
-    showButtons: ["next", "previous", "close"],
-    disableButtons: [],
-    overlayColor: "#000",
-    ...config,
-  };
+export interface GetConfig {
+  (): Config;
+  <K extends keyof Config>(key: K): Config[K];
 }
 
-export function getConfig(): Config;
-export function getConfig<K extends keyof Config>(key: K): Config[K];
-export function getConfig<K extends keyof Config>(key?: K) {
-  return key ? currentConfig[key] : currentConfig;
-}
+export type ConfigStore = {
+  getConfig: GetConfig;
+  configure: (config?: Config) => void;
+};
 
-export function setCurrentDriver(driver: Driver) {
-  currentDriver = driver;
-}
+// Each driver instance owns its own config store, so creating a second driver
+// no longer overwrites the configuration of the first (issue #571).
+export function createConfigStore(): ConfigStore {
+  let currentConfig: Config = {};
 
-export function getCurrentDriver() {
-  return currentDriver;
+  function configure(config: Config = {}) {
+    currentConfig = {
+      animate: true,
+      duration: 400,
+      allowClose: true,
+      allowScroll: true,
+      overlayClickBehavior: "close",
+      overlayOpacity: 0.7,
+      smoothScroll: false,
+      disableActiveInteraction: false,
+      showProgress: false,
+      stagePadding: 10,
+      stageRadius: 5,
+      popoverOffset: 10,
+      showButtons: ["next", "previous", "close"],
+      disableButtons: [],
+      overlayColor: "#000",
+      ...config,
+    };
+  }
+
+  const getConfig: GetConfig = (<K extends keyof Config>(key?: K) => {
+    return key ? currentConfig[key] : currentConfig;
+  }) as GetConfig;
+
+  configure();
+
+  return { getConfig, configure };
 }

@@ -1,9 +1,9 @@
-import { Config, DriverHook, getConfig, getCurrentDriver } from "./config";
+import { Config, DriverHook } from "./config";
+import { Context } from "./context";
 import { Driver, DriveStep } from "./driver";
-import { emit } from "./emitter";
 import { destroyDriverClick, onDriverClick } from "./events";
 import { repositionPopover } from "./position";
-import { getState, setState, State } from "./state";
+import { State } from "./state";
 import { bringInView, getFocusableElements } from "./utils";
 
 export type Side = "top" | "right" | "bottom" | "left";
@@ -51,8 +51,8 @@ export type PopoverDOM = {
   footerButtons: HTMLElement;
 };
 
-export function hidePopover() {
-  const popover = getState("popover");
+export function hidePopover(ctx: Context) {
+  const popover = ctx.getState("popover");
   if (!popover) {
     return;
   }
@@ -60,8 +60,8 @@ export function hidePopover() {
   popover.wrapper.style.display = "none";
 }
 
-export function renderPopover(element: Element, step: DriveStep) {
-  let popover = getState("popover");
+export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
+  let popover = ctx.getState("popover");
   if (popover) {
     destroyDriverClick(popover.wrapper);
     popover.wrapper.remove();
@@ -77,17 +77,17 @@ export function renderPopover(element: Element, step: DriveStep) {
     disableButtons,
     showProgress,
 
-    nextBtnText = getConfig("nextBtnText") || "Next",
-    prevBtnText = getConfig("prevBtnText") || "Previous",
-    progressText = getConfig("progressText") || "{current} of {total}",
+    nextBtnText = ctx.getConfig("nextBtnText") || "Next",
+    prevBtnText = ctx.getConfig("prevBtnText") || "Previous",
+    progressText = ctx.getConfig("progressText") || "{current} of {total}",
   } = step.popover || {};
 
   popover.nextButton.innerHTML = nextBtnText;
   popover.previousButton.innerHTML = prevBtnText;
   popover.progress.innerHTML = progressText;
 
-  const steps = getConfig("steps") || [];
-  const activeIndex = getState("activeIndex");
+  const steps = ctx.getConfig("steps") || [];
+  const activeIndex = ctx.getState("activeIndex");
   const isDoneStep = activeIndex !== undefined && activeIndex === steps.length - 1;
   if (isDoneStep) {
     popover.nextButton.classList.add("driver-popover-done-btn");
@@ -107,8 +107,8 @@ export function renderPopover(element: Element, step: DriveStep) {
     popover.description.style.display = "none";
   }
 
-  const showButtonsConfig: AllowedButtons[] = showButtons || getConfig("showButtons")!;
-  const showProgressConfig = showProgress || getConfig("showProgress") || false;
+  const showButtonsConfig: AllowedButtons[] = showButtons || ctx.getConfig("showButtons")!;
+  const showProgressConfig = showProgress || ctx.getConfig("showProgress") || false;
   const showFooter =
     showButtonsConfig?.includes("next") || showButtonsConfig?.includes("previous") || showProgressConfig;
 
@@ -124,7 +124,7 @@ export function renderPopover(element: Element, step: DriveStep) {
     popover.footer.style.display = "none";
   }
 
-  const disabledButtonsConfig: AllowedButtons[] = disableButtons || getConfig("disableButtons")! || [];
+  const disabledButtonsConfig: AllowedButtons[] = disableButtons || ctx.getConfig("disableButtons")! || [];
   if (disabledButtonsConfig?.includes("next")) {
     popover.nextButton.disabled = true;
     popover.nextButton.classList.add("driver-popover-btn-disabled");
@@ -158,7 +158,7 @@ export function renderPopover(element: Element, step: DriveStep) {
   popoverArrow.className = "driver-popover-arrow";
 
   // Reset any custom classes on the popover
-  const customPopoverClass = step.popover?.popoverClass || getConfig("popoverClass") || "";
+  const customPopoverClass = step.popover?.popoverClass || ctx.getConfig("popoverClass") || "";
   popoverWrapper.className = `driver-popover ${customPopoverClass}`.trim();
 
   // Handles the popover button clicks
@@ -167,19 +167,19 @@ export function renderPopover(element: Element, step: DriveStep) {
     e => {
       const target = e.target as HTMLElement;
 
-      const onNextClick = step.popover?.onNextClick || getConfig("onNextClick");
-      const onPrevClick = step.popover?.onPrevClick || getConfig("onPrevClick");
-      const onCloseClick = step.popover?.onCloseClick || getConfig("onCloseClick");
-      const onDoneClick = step.popover?.onDoneClick || getConfig("onDoneClick");
+      const onNextClick = step.popover?.onNextClick || ctx.getConfig("onNextClick");
+      const onPrevClick = step.popover?.onPrevClick || ctx.getConfig("onPrevClick");
+      const onCloseClick = step.popover?.onCloseClick || ctx.getConfig("onCloseClick");
+      const onDoneClick = step.popover?.onDoneClick || ctx.getConfig("onDoneClick");
 
       if (!!target.closest(".driver-popover-next-btn")) {
         // On the final step the next button acts as the done button, so a
         // dedicated onDoneClick takes precedence over onNextClick when provided.
         if (isDoneStep && onDoneClick) {
           return onDoneClick(element, step, {
-            config: getConfig(),
-            state: getState(),
-            driver: getCurrentDriver(),
+            config: ctx.getConfig(),
+            state: ctx.getState(),
+            driver: ctx.getDriver(),
           });
         }
 
@@ -187,36 +187,36 @@ export function renderPopover(element: Element, step: DriveStep) {
         // otherwise, emit the event.
         if (onNextClick) {
           return onNextClick(element, step, {
-            config: getConfig(),
-            state: getState(),
-            driver: getCurrentDriver(),
+            config: ctx.getConfig(),
+            state: ctx.getState(),
+            driver: ctx.getDriver(),
           });
         } else {
-          return emit("nextClick");
+          return ctx.emit("nextClick");
         }
       }
 
       if (!!target.closest(".driver-popover-prev-btn")) {
         if (onPrevClick) {
           return onPrevClick(element, step, {
-            config: getConfig(),
-            state: getState(),
-            driver: getCurrentDriver(),
+            config: ctx.getConfig(),
+            state: ctx.getState(),
+            driver: ctx.getDriver(),
           });
         } else {
-          return emit("prevClick");
+          return ctx.emit("prevClick");
         }
       }
 
       if (!!target.closest(".driver-popover-close-btn")) {
         if (onCloseClick) {
           return onCloseClick(element, step, {
-            config: getConfig(),
-            state: getState(),
-            driver: getCurrentDriver(),
+            config: ctx.getConfig(),
+            state: ctx.getState(),
+            driver: ctx.getDriver(),
           });
         } else {
-          return emit("closeClick");
+          return ctx.emit("closeClick");
         }
       }
 
@@ -230,26 +230,24 @@ export function renderPopover(element: Element, step: DriveStep) {
         return false;
       }
 
-      return !!target.closest(
-        ".driver-popover-prev-btn, .driver-popover-next-btn, .driver-popover-close-btn"
-      );
+      return !!target.closest(".driver-popover-prev-btn, .driver-popover-next-btn, .driver-popover-close-btn");
     }
   );
 
-  setState("popover", popover);
+  ctx.setState("popover", popover);
 
-  const onPopoverRender = step.popover?.onPopoverRender || getConfig("onPopoverRender");
+  const onPopoverRender = step.popover?.onPopoverRender || ctx.getConfig("onPopoverRender");
   if (onPopoverRender) {
     onPopoverRender(popover, {
-      config: getConfig(),
-      state: getState(),
-      driver: getCurrentDriver(),
+      config: ctx.getConfig(),
+      state: ctx.getState(),
+      driver: ctx.getDriver(),
     });
   }
 
-  repositionPopover(element, step);
-  repositionOnImagesLoad(popover, element, step);
-  bringInView(popoverWrapper);
+  repositionPopover(ctx, element, step);
+  repositionOnImagesLoad(ctx, popover, element, step);
+  bringInView(ctx, popoverWrapper);
 
   // Focus on the first focusable element in active element or popover
   const isToDummyElement = element.classList.contains("driver-dummy-element");
@@ -259,7 +257,7 @@ export function renderPopover(element: Element, step: DriveStep) {
   }
 }
 
-function repositionOnImagesLoad(popover: PopoverDOM, element: Element, step: DriveStep) {
+function repositionOnImagesLoad(ctx: Context, popover: PopoverDOM, element: Element, step: DriveStep) {
   const images = popover.wrapper.querySelectorAll("img");
 
   images.forEach(image => {
@@ -267,7 +265,7 @@ function repositionOnImagesLoad(popover: PopoverDOM, element: Element, step: Dri
       return;
     }
 
-    const reposition = () => repositionPopover(element, step);
+    const reposition = () => repositionPopover(ctx, element, step);
 
     image.addEventListener("load", reposition, { once: true });
     image.addEventListener("error", reposition, { once: true });
@@ -344,8 +342,8 @@ function createPopover(): PopoverDOM {
   };
 }
 
-export function destroyPopover() {
-  const popover = getState("popover");
+export function destroyPopover(ctx: Context) {
+  const popover = ctx.getState("popover");
   if (!popover) {
     return;
   }

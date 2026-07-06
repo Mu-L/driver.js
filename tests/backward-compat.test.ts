@@ -9,11 +9,9 @@ import { nextFrame, popoverTitle, SAMPLE_STEPS, useDriverHarness } from "./utils
 // These are the real backward-compatibility guarantees; they should stay green
 // through the refactor.
 //
-// Part 2 characterises the CURRENT, shared-global behaviour that issue #571 is
-// about. These assertions intentionally encode today's (buggy) singleton
-// semantics so the baseline is green. When the refactor lands, these are the
-// tests we flip — they become the proof that the fix changed what it should and
-// nothing else.
+// Part 2 locks in the per-instance isolation that issue #571 asked for: config,
+// steps, active state and hook identity are now scoped to each driver instance
+// instead of shared through module-level globals.
 
 useDriverHarness();
 
@@ -164,15 +162,11 @@ describe("backward compatibility — single instance public API", () => {
   });
 });
 
-describe("per-instance isolation (#571) — desired behaviour, currently failing", () => {
-  // These are forward specs for the per-instance refactor, written as the
-  // behaviour we WANT. They use `it.fails`, so today they pass precisely because
-  // the assertion fails against the current shared-global implementation. When
-  // the refactor lands and isolation works, each spec will start passing, which
-  // makes `it.fails` fail — that's the signal to drop `.fails` and lock the
-  // behaviour in as a regular regression test.
+describe("per-instance isolation (#571)", () => {
+  // Each driver instance owns its own config, steps and state, so creating a
+  // second driver never disturbs the first.
 
-  it.fails("gives each instance its own config", () => {
+  it("gives each instance its own config", () => {
     const d1 = track(driver({ animate: false, stagePadding: 1 }));
     const d2 = track(driver({ animate: false, stagePadding: 2 }));
 
@@ -180,7 +174,7 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(d2.getConfig().stagePadding).toBe(2);
   });
 
-  it.fails("drives each instance's own steps", () => {
+  it("drives each instance's own steps", () => {
     const d1 = track(driver({ animate: false, steps: [{ element: "#intro", popover: { title: "D1 Step" } }] }));
     track(driver({ animate: false, steps: [{ element: "#card-1", popover: { title: "D2 Step" } }] }));
 
@@ -189,7 +183,7 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(popoverTitle()).toBe("D1 Step");
   });
 
-  it.fails("keeps each instance's active state independent", () => {
+  it("keeps each instance's active state independent", () => {
     const d1 = track(driver({ animate: false, steps: SAMPLE_STEPS }));
     const d2 = track(driver({ animate: false, steps: SAMPLE_STEPS }));
 
@@ -200,7 +194,7 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(d2.getActiveIndex()).toBeUndefined();
   });
 
-  it.fails("keeps setConfig changes scoped to one instance", () => {
+  it("keeps setConfig changes scoped to one instance", () => {
     const d1 = track(driver({ animate: false, stagePadding: 1 }));
     const d2 = track(driver({ animate: false, stagePadding: 2 }));
 
@@ -210,7 +204,7 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(d2.getConfig().stagePadding).toBe(2);
   });
 
-  it.fails("keeps setSteps scoped to one instance", () => {
+  it("keeps setSteps scoped to one instance", () => {
     const d1 = track(driver({ animate: false }));
     const d2 = track(driver({ animate: false }));
 
@@ -222,7 +216,7 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(popoverTitle()).toBe("D1 only");
   });
 
-  it.fails("passes each instance's own driver into its hooks", async () => {
+  it("passes each instance's own driver into its hooks", async () => {
     const seen: Driver[] = [];
     const d1 = track(
       driver({

@@ -1,7 +1,6 @@
-import { getConfig } from "./config";
+import { Context } from "./context";
 import { DriveStep } from "./driver";
 import type { Alignment, Side } from "./popover";
-import { getState } from "./state";
 
 // Internal placement. Beyond the public sides it includes "over", used when
 // there is no target element (or the popover is intentionally centered like a
@@ -15,16 +14,16 @@ type PopoverDimensions = {
   realHeight: number;
 };
 
-function getPopoverDimensions(): PopoverDimensions | undefined {
-  const popover = getState("popover");
+function getPopoverDimensions(ctx: Context): PopoverDimensions | undefined {
+  const popover = ctx.getState("popover");
   if (!popover?.wrapper) {
     return;
   }
 
   const boundingClientRect = popover.wrapper.getBoundingClientRect();
 
-  const stagePadding = getConfig("stagePadding") || 0;
-  const popoverOffset = getConfig("popoverOffset") || 0;
+  const stagePadding = ctx.getConfig("stagePadding") || 0;
+  const popoverOffset = ctx.getConfig("popoverOffset") || 0;
 
   return {
     width: boundingClientRect.width + stagePadding + popoverOffset,
@@ -124,8 +123,8 @@ function calculateLeftForTopBottom(
   return 0;
 }
 
-export function repositionPopover(element: Element, step: DriveStep) {
-  const popover = getState("popover");
+export function repositionPopover(ctx: Context, element: Element, step: DriveStep) {
+  const popover = ctx.getState("popover");
   if (!popover) {
     return;
   }
@@ -135,9 +134,9 @@ export function repositionPopover(element: Element, step: DriveStep) {
   // Configure the popover positioning
   const requiredAlignment: Alignment = align;
   const requiredSide: Placement = element.id === "driver-dummy-element" ? "over" : side;
-  const popoverPadding = getConfig("stagePadding") || 0;
+  const popoverPadding = ctx.getConfig("stagePadding") || 0;
 
-  const popoverDimensions = getPopoverDimensions()!;
+  const popoverDimensions = getPopoverDimensions(ctx)!;
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
   const elementDimensions = element.getBoundingClientRect();
 
@@ -261,7 +260,7 @@ export function repositionPopover(element: Element, step: DriveStep) {
   // Point the arrow at the element. When no side is optimal the popover is
   // detached from the element (centered/pinned to the bottom of the screen),
   // so there is nothing sensible to point at and the arrow is hidden.
-  renderPopoverArrow(noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, element);
+  renderPopoverArrow(ctx, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, element);
 
   [...popover.wrapper.classList]
     .filter(className => className.startsWith("driver-popover-side-") || className.startsWith("driver-popover-align-"))
@@ -368,8 +367,8 @@ export function resolveArrowSide(
   return element.right <= popover.left ? "right" : "left";
 }
 
-function renderPopoverArrow(side: Placement, alignment: Alignment, element: Element) {
-  const popover = getState("popover");
+function renderPopoverArrow(ctx: Context, side: Placement, alignment: Alignment, element: Element) {
+  const popover = ctx.getState("popover");
   if (!popover) {
     return;
   }

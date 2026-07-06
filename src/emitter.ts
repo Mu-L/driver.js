@@ -7,16 +7,28 @@ type allowedEvents =
   | "arrowRightPress"
   | "arrowLeftPress";
 
-let registeredListeners: Partial<{ [key in allowedEvents]: () => void }> = {};
+export type Emitter = {
+  listen: (hook: allowedEvents, callback: () => void) => void;
+  emit: (hook: allowedEvents) => void;
+  reset: () => void;
+};
 
-export function listen(hook: allowedEvents, callback: () => void) {
-  registeredListeners[hook] = callback;
-}
+// Each driver instance owns its own emitter so events raised by one tour never
+// trigger listeners registered by another.
+export function createEmitter(): Emitter {
+  let registeredListeners: Partial<{ [key in allowedEvents]: () => void }> = {};
 
-export function emit(hook: allowedEvents) {
-  registeredListeners[hook]?.();
-}
+  function listen(hook: allowedEvents, callback: () => void) {
+    registeredListeners[hook] = callback;
+  }
 
-export function destroyEmitter() {
-  registeredListeners = {};
+  function emit(hook: allowedEvents) {
+    registeredListeners[hook]?.();
+  }
+
+  function reset() {
+    registeredListeners = {};
+  }
+
+  return { listen, emit, reset };
 }

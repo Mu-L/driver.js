@@ -1,10 +1,9 @@
+import { Context } from "./context";
 import { DriveStep } from "./driver";
 import { refreshOverlay, trackActiveElement, transitionStage } from "./overlay";
-import { getConfig, getCurrentDriver } from "./config";
 import { hidePopover, renderPopover } from "./popover";
 import { repositionPopover } from "./position";
 import { bringInView, isScrollable } from "./utils";
-import { getState, setState } from "./state";
 
 function mountDummyElement(): Element {
   const existingDummy = document.getElementById("driver-dummy-element");
@@ -28,7 +27,7 @@ function mountDummyElement(): Element {
   return element;
 }
 
-export function highlight(step: DriveStep) {
+export function highlight(ctx: Context, step: DriveStep) {
   const { element } = step;
   let elemObj =
     typeof element === "function" ? element() : typeof element === "string" ? document.querySelector(element) : element;
@@ -41,28 +40,28 @@ export function highlight(step: DriveStep) {
     elemObj = mountDummyElement();
   }
 
-  transferHighlight(elemObj, step);
+  transferHighlight(ctx, elemObj, step);
 }
 
-export function refreshActiveHighlight() {
-  const activeHighlight = getState("__activeElement");
-  const activeStep = getState("__activeStep")!;
+export function refreshActiveHighlight(ctx: Context) {
+  const activeHighlight = ctx.getState("__activeElement");
+  const activeStep = ctx.getState("__activeStep")!;
 
   if (!activeHighlight) {
     return;
   }
 
-  trackActiveElement(activeHighlight);
-  refreshOverlay();
-  repositionPopover(activeHighlight, activeStep);
+  trackActiveElement(ctx, activeHighlight);
+  refreshOverlay(ctx);
+  repositionPopover(ctx, activeHighlight, activeStep);
 }
 
-function transferHighlight(toElement: Element, toStep: DriveStep) {
-  const duration = getConfig("duration") || 400;
+function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) {
+  const duration = ctx.getConfig("duration") || 400;
   const start = Date.now();
 
-  const fromStep = getState("__activeStep");
-  const fromElement = getState("__activeElement") || toElement;
+  const fromStep = ctx.getState("__activeStep");
+  const fromElement = ctx.getState("__activeElement") || toElement;
 
   // If it's the first time we're highlighting an element, we show
   // the popover immediately. Otherwise, we wait for the animation
@@ -71,19 +70,19 @@ function transferHighlight(toElement: Element, toStep: DriveStep) {
   const isToDummyElement = toElement.id === "driver-dummy-element";
   const isFromDummyElement = fromElement.id === "driver-dummy-element";
 
-  const isAnimatedTour = getConfig("animate");
-  const highlightStartedHook = toStep.onHighlightStarted || getConfig("onHighlightStarted");
-  const highlightedHook = toStep?.onHighlighted || getConfig("onHighlighted");
-  const deselectedHook = fromStep?.onDeselected || getConfig("onDeselected");
+  const isAnimatedTour = ctx.getConfig("animate");
+  const highlightStartedHook = toStep.onHighlightStarted || ctx.getConfig("onHighlightStarted");
+  const highlightedHook = toStep?.onHighlighted || ctx.getConfig("onHighlighted");
+  const deselectedHook = fromStep?.onDeselected || ctx.getConfig("onDeselected");
 
-  const config = getConfig();
-  const state = getState();
+  const config = ctx.getConfig();
+  const state = ctx.getState();
 
   if (!isFirstHighlight && deselectedHook) {
     deselectedHook(isFromDummyElement ? undefined : fromElement, fromStep!, {
       config,
       state,
-      driver: getCurrentDriver(),
+      driver: ctx.getDriver(),
     });
   }
 
@@ -91,22 +90,22 @@ function transferHighlight(toElement: Element, toStep: DriveStep) {
     highlightStartedHook(isToDummyElement ? undefined : toElement, toStep, {
       config,
       state,
-      driver: getCurrentDriver(),
+      driver: ctx.getDriver(),
     });
   }
 
   const hasDelayedPopover = !isFirstHighlight && isAnimatedTour;
   let isPopoverRendered = false;
 
-  hidePopover();
+  hidePopover(ctx);
 
-  setState("previousStep", fromStep);
-  setState("previousElement", fromElement);
-  setState("activeStep", toStep);
-  setState("activeElement", toElement);
+  ctx.setState("previousStep", fromStep);
+  ctx.setState("previousElement", fromElement);
+  ctx.setState("activeStep", toStep);
+  ctx.setState("activeElement", toElement);
 
   const animate = () => {
-    const transitionCallback = getState("__transitionCallback");
+    const transitionCallback = ctx.getState("__transitionCallback");
 
     // This makes sure that the repeated calls to transferHighlight
     // don't interfere with each other. Only the last call will be
@@ -120,40 +119,40 @@ function transferHighlight(toElement: Element, toStep: DriveStep) {
     const isHalfwayThrough = timeRemaining <= duration / 2;
 
     if (toStep.popover && isHalfwayThrough && !isPopoverRendered && hasDelayedPopover) {
-      renderPopover(toElement, toStep);
+      renderPopover(ctx, toElement, toStep);
       isPopoverRendered = true;
     }
 
-    if (getConfig("animate") && elapsed < duration) {
-      transitionStage(elapsed, duration, fromElement, toElement);
+    if (ctx.getConfig("animate") && elapsed < duration) {
+      transitionStage(ctx, elapsed, duration, fromElement, toElement);
     } else {
-      trackActiveElement(toElement);
+      trackActiveElement(ctx, toElement);
 
       if (highlightedHook) {
         highlightedHook(isToDummyElement ? undefined : toElement, toStep, {
-          config: getConfig(),
-          state: getState(),
-          driver: getCurrentDriver(),
+          config: ctx.getConfig(),
+          state: ctx.getState(),
+          driver: ctx.getDriver(),
         });
       }
 
-      setState("__transitionCallback", undefined);
-      setState("__previousStep", fromStep);
-      setState("__previousElement", fromElement);
-      setState("__activeStep", toStep);
-      setState("__activeElement", toElement);
+      ctx.setState("__transitionCallback", undefined);
+      ctx.setState("__previousStep", fromStep);
+      ctx.setState("__previousElement", fromElement);
+      ctx.setState("__activeStep", toStep);
+      ctx.setState("__activeElement", toElement);
     }
 
     window.requestAnimationFrame(animate);
   };
 
-  setState("__transitionCallback", animate);
+  ctx.setState("__transitionCallback", animate);
 
   window.requestAnimationFrame(animate);
 
-  bringInView(toElement);
+  bringInView(ctx, toElement);
   if (!hasDelayedPopover && toStep.popover) {
-    renderPopover(toElement, toStep);
+    renderPopover(ctx, toElement, toStep);
   }
 
   document.querySelectorAll(".driver-active-element-parent").forEach(element => {
@@ -165,7 +164,7 @@ function transferHighlight(toElement: Element, toStep: DriveStep) {
   fromElement.removeAttribute("aria-expanded");
   fromElement.removeAttribute("aria-controls");
 
-  const disableActiveInteraction = toStep.disableActiveInteraction ?? getConfig("disableActiveInteraction");
+  const disableActiveInteraction = toStep.disableActiveInteraction ?? ctx.getConfig("disableActiveInteraction");
   if (disableActiveInteraction) {
     toElement.classList.add("driver-no-interaction");
   }
