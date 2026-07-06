@@ -179,3 +179,53 @@ describe("button interactions", () => {
     expect(d.isActive()).toBe(true);
   });
 });
+
+describe("overlay click behaviour", () => {
+  it("closes the tour when the overlay is clicked and behaviour is 'close'", async () => {
+    const d = createDriver({ animate: false, overlayClickBehavior: "close", steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    clickOverlay();
+
+    expect(d.isActive()).toBe(false);
+  });
+
+  it("runs a custom overlayClickBehavior with the active element, step and driver", async () => {
+    const overlayClickBehavior = vi.fn();
+    const d = createDriver({ animate: false, overlayClickBehavior, steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    clickOverlay();
+
+    expect(overlayClickBehavior).toHaveBeenCalledTimes(1);
+    const [element, step, options] = overlayClickBehavior.mock.calls[0];
+    expect(element).toBe(document.querySelector("#intro"));
+    expect(step.popover?.title).toBe("Step 1");
+    expect(options.driver).toBe(d);
+    expect(d.isActive()).toBe(true);
+  });
+
+  it("advances to the next step when 'nextStep' overlay is clicked without onNextClick", async () => {
+    const d = createDriver({ animate: false, overlayClickBehavior: "nextStep", steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    clickOverlay();
+
+    expect(d.getActiveIndex()).toBe(1);
+  });
+
+  it("runs onDoneClick when a 'nextStep' overlay is clicked on the final step", async () => {
+    const onDoneClick = vi.fn();
+    const d = createDriver({ animate: false, overlayClickBehavior: "nextStep", onDoneClick, steps: SAMPLE_STEPS });
+    d.drive(SAMPLE_STEPS.length - 1);
+    await nextFrame();
+
+    clickOverlay();
+
+    expect(onDoneClick).toHaveBeenCalledTimes(1);
+    expect(d.isActive()).toBe(true);
+  });
+});

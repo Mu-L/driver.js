@@ -1,5 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { createDriver, popoverDescription, popoverEl, popoverTitle, useDriverHarness } from "./utils";
+import { describe, expect, it, vi } from "vitest";
+import {
+  createDriver,
+  nextFrame,
+  popoverDescription,
+  popoverEl,
+  popoverTitle,
+  pressKey,
+  SAMPLE_STEPS,
+  useDriverHarness,
+} from "./utils";
 
 useDriverHarness();
 
@@ -75,5 +84,62 @@ describe("lifecycle", () => {
     expect(document.body.classList.contains("driver-active")).toBe(false);
     expect(document.querySelector(".driver-active-element")).toBeNull();
     expect(d.getActiveIndex()).toBeUndefined();
+  });
+});
+
+describe("drive guards", () => {
+  it("logs an error and stays inactive when there are no steps", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const d = createDriver({ animate: false });
+    d.drive();
+
+    expect(error).toHaveBeenCalledWith("No steps to drive through");
+    expect(d.isActive()).toBe(false);
+    error.mockRestore();
+  });
+
+  it("destroys instead of driving an out-of-range step index", () => {
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
+    d.drive(99);
+
+    expect(d.isActive()).toBe(false);
+  });
+
+  it("ignores moveNext and movePrevious before the tour starts", () => {
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
+    d.moveNext();
+    d.movePrevious();
+
+    expect(d.isActive()).toBe(false);
+    expect(d.getActiveIndex()).toBeUndefined();
+  });
+});
+
+describe("dummy-element hooks", () => {
+  it("passes an undefined element to onDeselected and onDestroyed for a dummy highlight", async () => {
+    const onDeselected = vi.fn();
+    const onDestroyed = vi.fn();
+    const d = createDriver({ animate: false, onDeselected, onDestroyed });
+    d.highlight({ popover: { title: "Modal" } });
+    await nextFrame();
+
+    d.destroy();
+
+    expect(onDeselected).toHaveBeenCalledTimes(1);
+    expect(onDestroyed).toHaveBeenCalledTimes(1);
+    expect(onDeselected.mock.calls[0][0]).toBeUndefined();
+    expect(onDestroyed.mock.calls[0][0]).toBeUndefined();
+  });
+
+  it("passes an undefined element to onDestroyStarted for a dummy highlight", async () => {
+    const onDestroyStarted = vi.fn();
+    const d = createDriver({ animate: false, onDestroyStarted });
+    d.highlight({ popover: { title: "Modal" } });
+    await nextFrame();
+
+    pressKey("Escape");
+
+    expect(onDestroyStarted).toHaveBeenCalledTimes(1);
+    expect(onDestroyStarted.mock.calls[0][0]).toBeUndefined();
   });
 });

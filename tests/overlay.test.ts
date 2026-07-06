@@ -51,4 +51,32 @@ describe("overlay configuration", () => {
 
     expect(overlayPath()?.getAttribute("d")).toContain("M-15,-20");
   });
+
+  it("falls back to a solid black fill when overlayColor is empty", async () => {
+    const d = createDriver({ animate: false, overlayColor: "", steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    expect(overlayPath()?.style.fill).toBe("rgb(0, 0, 0)");
+  });
+
+  it("draws square corners with no inset when padding and radius are zero", async () => {
+    const d = createDriver({ animate: false, stagePadding: 0, stageRadius: 0, steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    // Zero radius removes the rounded-corner arcs and the cutout starts at the origin.
+    expect(overlayPath()?.getAttribute("d")).toContain("M0,0");
+    expect(overlayPath()?.getAttribute("d")).not.toContain("a5,5");
+  });
+
+  it("does not close the tour when the backdrop outside the cutout path is clicked", async () => {
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS });
+    d.drive();
+    await nextFrame();
+
+    document.querySelector(".driver-overlay")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(d.isActive()).toBe(true);
+  });
 });

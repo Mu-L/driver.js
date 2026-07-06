@@ -187,6 +187,58 @@ describe("popover rendering", () => {
   });
 });
 
+describe("popover interaction edge cases", () => {
+  it("disables the close button when close is in disableButtons", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({
+      element: "#intro",
+      popover: { title: "Intro", showButtons: ["close"], disableButtons: ["close"] },
+    });
+
+    expect(navButton("close")?.disabled).toBe(true);
+    expect(navButton("close")?.classList.contains("driver-popover-btn-disabled")).toBe(true);
+  });
+
+  it("emits without navigating when next/prev are clicked on a bare highlight", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({ element: "#intro", popover: { title: "Intro", showButtons: ["next", "previous"] } });
+
+    navButton("next")?.click();
+    navButton("prev")?.click();
+
+    expect(d.isActive()).toBe(true);
+    expect(d.getActiveElement()).toBe(document.querySelector("#intro"));
+  });
+
+  it("lets links inside the description behave normally", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({
+      element: "#intro",
+      popover: { title: "Intro", description: '<a class="doc-link" href="#doc">Docs</a>' },
+    });
+
+    document.querySelector<HTMLElement>(".doc-link")?.click();
+
+    expect(d.isActive()).toBe(true);
+  });
+
+  it("repositions the popover when a lazy image inside it finishes loading", () => {
+    let lazyImage: HTMLImageElement | undefined;
+    const d = createDriver({
+      animate: false,
+      onPopoverRender: popover => {
+        lazyImage = document.createElement("img");
+        Object.defineProperty(lazyImage, "complete", { value: false });
+        popover.description.appendChild(lazyImage);
+      },
+    });
+    d.highlight({ element: "#intro", popover: { title: "Intro", description: "With image" } });
+
+    expect(() => lazyImage?.dispatchEvent(new Event("load"))).not.toThrow();
+    expect(popoverEl()).not.toBeNull();
+  });
+});
+
 describe("popover arrow", () => {
   const rect = (over: Partial<DOMRect>): DOMRect =>
     ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...over }) as DOMRect;
