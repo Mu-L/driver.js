@@ -199,4 +199,48 @@ describe("per-instance isolation (#571) — desired behaviour, currently failing
     expect(d2.isActive()).toBe(false);
     expect(d2.getActiveIndex()).toBeUndefined();
   });
+
+  it.fails("keeps setConfig changes scoped to one instance", () => {
+    const d1 = track(driver({ animate: false, stagePadding: 1 }));
+    const d2 = track(driver({ animate: false, stagePadding: 2 }));
+
+    d1.setConfig({ animate: false, stagePadding: 10 });
+
+    expect(d1.getConfig().stagePadding).toBe(10);
+    expect(d2.getConfig().stagePadding).toBe(2);
+  });
+
+  it.fails("keeps setSteps scoped to one instance", () => {
+    const d1 = track(driver({ animate: false }));
+    const d2 = track(driver({ animate: false }));
+
+    d1.setSteps([{ element: "#intro", popover: { title: "D1 only" } }]);
+    d2.setSteps([{ element: "#card-1", popover: { title: "D2 only" } }]);
+
+    d1.drive();
+
+    expect(popoverTitle()).toBe("D1 only");
+  });
+
+  it.fails("passes each instance's own driver into its hooks", async () => {
+    const seen: Driver[] = [];
+    const d1 = track(
+      driver({
+        animate: false,
+        steps: [
+          {
+            element: "#intro",
+            popover: { title: "D1" },
+            onHighlighted: (_element, _step, opts) => seen.push(opts.driver),
+          },
+        ],
+      })
+    );
+    track(driver({ animate: false, steps: SAMPLE_STEPS }));
+
+    d1.drive();
+    await nextFrame();
+
+    expect(seen[0]).toBe(d1);
+  });
 });
