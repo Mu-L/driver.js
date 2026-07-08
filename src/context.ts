@@ -3,10 +3,8 @@ import { createStateStore, GetState, SetState } from "./state";
 import { createEmitter, Emitter } from "./emitter";
 import type { Driver } from "./driver";
 
-// A Context bundles the per-instance config, state and emitter for a single
-// driver. It is threaded through every helper so that nothing reaches for
-// shared module-level state — that shared state was the root of issue #571,
-// where a second `driver()` clobbered the config and state of the first.
+// Per-instance config, state and emitter, threaded through the helpers so
+// nothing falls back to shared module-level state.
 export type Context = {
   getConfig: GetConfig;
   setConfig: (config?: Config) => void;

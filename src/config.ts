@@ -66,8 +66,6 @@ export type ConfigStore = {
   configure: (config?: Config) => void;
 };
 
-// Each driver instance owns its own config store, so creating a second driver
-// no longer overwrites the configuration of the first (issue #571).
 export function createConfigStore(): ConfigStore {
   let currentConfig: Config = {};
 

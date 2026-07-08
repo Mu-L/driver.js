@@ -127,9 +127,7 @@ export function destroyDriverClick(element: Element) {
 }
 
 export function initEvents(ctx: Context) {
-  // The handlers close over this instance's context and are stashed in state so
-  // destroyEvents can detach the very same references, keeping instances from
-  // removing each other's listeners.
+  // Stashed in state so destroyEvents can detach these exact references.
   const onWindowKeyup = (e: KeyboardEvent) => onKeyup(ctx, e);
   const onWindowKeydown = (e: KeyboardEvent) => trapFocus(ctx, e);
   const onWindowResize = () => requireRefresh(ctx);

@@ -13,8 +13,6 @@ export type Emitter = {
   reset: () => void;
 };
 
-// Each driver instance owns its own emitter so events raised by one tour never
-// trigger listeners registered by another.
 export function createEmitter(): Emitter {
   let registeredListeners: Partial<{ [key in allowedEvents]: () => void }> = {};
 

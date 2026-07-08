@@ -10,9 +10,7 @@ export const instancesGroup: ExampleGroup = {
       description:
         "Two drivers created back-to-back keep their own config, steps and state (#571). Instance A drives first, then hands off to Instance B — open the console to see each report its own config.",
       run() {
-        // Instance A is created first. Before per-instance isolation landed,
-        // creating Instance B afterwards overwrote the shared global config, so
-        // A.drive() would run B's tour. Each instance now owns its own config.
+        // A is created first, then B — the order that used to leak config across instances.
         const instanceA = driver({
           overlayColor: "#1d4ed8",
           showProgress: true,
@@ -42,7 +40,6 @@ export const instancesGroup: ExampleGroup = {
           onDestroyed: () => instanceB.drive(),
         });
 
-        // Instance B is created second with a completely different config.
         const instanceB = driver({
           overlayColor: "#15803d",
           showProgress: false,

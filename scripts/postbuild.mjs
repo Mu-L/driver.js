@@ -8,10 +8,8 @@ const source = "dist/driver.js.d.ts";
 copyFileSync(source, "dist/driver.js.d.mts");
 copyFileSync(source, "dist/driver.js.d.cts");
 
-// Vite 8 whitespace-minifies the CJS and IIFE outputs but ships the ESM bundle
-// with its whitespace intact, so run a final esbuild pass on just the .mjs to
-// strip it (~9% smaller gzipped). Identifiers are already mangled and no
-// sourcemaps are shipped, so there is no downside for consumers.
+// Vite ships the ESM bundle with its whitespace intact (the CJS and IIFE builds
+// are already minified), so strip it here for a smaller gzipped file.
 const esmBundle = "dist/driver.js.mjs";
 const minified = await transform(readFileSync(esmBundle, "utf8"), { minify: true, legalComments: "none" });
 writeFileSync(esmBundle, minified.code);

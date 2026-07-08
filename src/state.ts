@@ -27,7 +27,6 @@ export type State = {
   __activeStagePosition?: StageDefinition;
   __overlaySvg?: SVGSVGElement;
 
-  // Per-instance window listeners, stashed so they can be detached on destroy.
   __events?: {
     onKeyup: (e: KeyboardEvent) => void;
     onKeydown: (e: KeyboardEvent) => void;
@@ -49,8 +48,6 @@ export type StateStore = {
   resetState: () => void;
 };
 
-// Each driver instance owns its own state store, so two drivers on the same
-// page never read or clobber each other's active step, popover or overlay.
 export function createStateStore(): StateStore {
   let currentState: State = {};
 

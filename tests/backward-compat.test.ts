@@ -2,16 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { driver, type Driver } from "../src/driver";
 import { nextFrame, popoverTitle, SAMPLE_STEPS, useDriverHarness } from "./utils";
 
-// This file is a safety net for the planned per-instance refactor (issue #571).
-//
-// Part 1 pins the public API contract that MUST keep working no matter how the
-// internals change — defaults, return shapes, navigation, lifecycle, callbacks.
-// These are the real backward-compatibility guarantees; they should stay green
-// through the refactor.
-//
-// Part 2 locks in the per-instance isolation that issue #571 asked for: config,
-// steps, active state and hook identity are now scoped to each driver instance
-// instead of shared through module-level globals.
+// Part 1 pins the public API contract; Part 2 covers the per-instance isolation
+// from #571. Both should stay green.
 
 useDriverHarness();
 
@@ -163,9 +155,6 @@ describe("backward compatibility — single instance public API", () => {
 });
 
 describe("per-instance isolation (#571)", () => {
-  // Each driver instance owns its own config, steps and state, so creating a
-  // second driver never disturbs the first.
-
   it("gives each instance its own config", () => {
     const d1 = track(driver({ animate: false, stagePadding: 1 }));
     const d2 = track(driver({ animate: false, stagePadding: 2 }));
