@@ -6,12 +6,14 @@ import { tourGroup } from "./tour";
 import { apiGroup } from "./api";
 import { durationGroup } from "./duration";
 import { scrollGroup } from "./scroll";
+import { instancesGroup } from "./instances";
 
 export const exampleGroups: ExampleGroup[] = [
   highlightGroup,
   popoverGroup,
   arrowGroup,
   tourGroup,
+  instancesGroup,
   durationGroup,
   scrollGroup,
   apiGroup,
