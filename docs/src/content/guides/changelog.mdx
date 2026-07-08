@@ -5,14 +5,16 @@ groupTitle: "Introduction"
 sort: 7
 ---
 
-The _Unreleased_ section lists changes that are merged and will ship in the next
-release. Once a release is published, these entries move under a versioned
-heading.
+The _Unreleased_ section lists changes merged for the next release. Once it
+ships, these entries move under a versioned heading.
 
 ## Unreleased
 
 ### Fixed
 
+- Each `driver()` call keeps its own config, steps and state, so creating a
+  second instance no longer overwrites the first.
+  ([#571](https://github.com/nilbuild/driver.js/issues/571))
 - Popover no longer jumps when its content has images that load after render.
 
 ## 1.6.0
