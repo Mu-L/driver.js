@@ -70,11 +70,7 @@ export function driver(options: Config = {}): Driver {
       const activeStep = ctx.getState("__activeStep");
       const activeElement = ctx.getState("__activeElement");
 
-      overlayClickBehavior(activeElement, activeStep!, {
-        config: ctx.getConfig(),
-        state: ctx.getState(),
-        driver: ctx.getDriver(),
-      });
+      overlayClickBehavior(activeElement, activeStep!, ctx.getHookOpts());
 
       return;
     }
@@ -87,21 +83,13 @@ export function driver(options: Config = {}): Driver {
       const isLastStep = ctx.getState("activeIndex") === steps.length - 1;
       const onDoneClick = activeStep?.popover?.onDoneClick || ctx.getConfig("onDoneClick");
       if (isLastStep && onDoneClick) {
-        onDoneClick(activeElement, activeStep!, {
-          config: ctx.getConfig(),
-          state: ctx.getState(),
-          driver: ctx.getDriver(),
-        });
+        onDoneClick(activeElement, activeStep!, ctx.getHookOpts());
         return;
       }
 
       const onNextClick = activeStep?.popover?.onNextClick || ctx.getConfig("onNextClick");
       if (onNextClick) {
-        onNextClick(activeElement, activeStep!, {
-          config: ctx.getConfig(),
-          state: ctx.getState(),
-          driver: ctx.getDriver(),
-        });
+        onNextClick(activeElement, activeStep!, ctx.getHookOpts());
         return;
       }
 
@@ -169,11 +157,7 @@ export function driver(options: Config = {}): Driver {
 
     const onPrevClick = activeStep.popover?.onPrevClick || ctx.getConfig("onPrevClick");
     if (onPrevClick) {
-      return onPrevClick(activeElement, activeStep, {
-        config: ctx.getConfig(),
-        state: ctx.getState(),
-        driver: ctx.getDriver(),
-      });
+      return onPrevClick(activeElement, activeStep, ctx.getHookOpts());
     }
 
     movePrevious();
@@ -196,20 +180,12 @@ export function driver(options: Config = {}): Driver {
     const isLastStep = activeIndex === steps.length - 1;
     const onDoneClick = activeStep.popover?.onDoneClick || ctx.getConfig("onDoneClick");
     if (isLastStep && onDoneClick) {
-      return onDoneClick(activeElement, activeStep, {
-        config: ctx.getConfig(),
-        state: ctx.getState(),
-        driver: ctx.getDriver(),
-      });
+      return onDoneClick(activeElement, activeStep, ctx.getHookOpts());
     }
 
     const onNextClick = activeStep.popover?.onNextClick || ctx.getConfig("onNextClick");
     if (onNextClick) {
-      return onNextClick(activeElement, activeStep, {
-        config: ctx.getConfig(),
-        state: ctx.getState(),
-        driver: ctx.getDriver(),
-      });
+      return onNextClick(activeElement, activeStep, ctx.getHookOpts());
     }
 
     moveNext();
@@ -326,11 +302,7 @@ export function driver(options: Config = {}): Driver {
     // not causing tour to be destroyed.
     if (withOnDestroyStartedHook && onDestroyStarted) {
       const isActiveDummyElement = !activeElement || activeElement?.id === "driver-dummy-element";
-      onDestroyStarted(isActiveDummyElement ? undefined : activeElement, activeStep!, {
-        config: ctx.getConfig(),
-        state: ctx.getState(),
-        driver: ctx.getDriver(),
-      });
+      onDestroyStarted(isActiveDummyElement ? undefined : activeElement, activeStep!, ctx.getHookOpts());
       return;
     }
 
@@ -353,19 +325,11 @@ export function driver(options: Config = {}): Driver {
     if (activeElement && activeStep) {
       const isActiveDummyElement = activeElement.id === "driver-dummy-element";
       if (onDeselected) {
-        onDeselected(isActiveDummyElement ? undefined : activeElement, activeStep, {
-          config: ctx.getConfig(),
-          state: stateBeforeDestroy,
-          driver: ctx.getDriver(),
-        });
+        onDeselected(isActiveDummyElement ? undefined : activeElement, activeStep, ctx.getHookOpts(stateBeforeDestroy));
       }
 
       if (onDestroyed) {
-        onDestroyed(isActiveDummyElement ? undefined : activeElement, activeStep, {
-          config: ctx.getConfig(),
-          state: stateBeforeDestroy,
-          driver: ctx.getDriver(),
-        });
+        onDestroyed(isActiveDummyElement ? undefined : activeElement, activeStep, ctx.getHookOpts(stateBeforeDestroy));
       }
     }
 

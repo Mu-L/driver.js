@@ -2,11 +2,14 @@ import { Driver, DriveStep } from "./driver";
 import { AllowedButtons, PopoverDOM } from "./popover";
 import { State } from "./state";
 
-export type DriverHook = (
-  element: Element | undefined,
-  step: DriveStep,
-  opts: { config: Config; state: State; driver: Driver }
-) => void;
+export type HookOpts = {
+  config: Config;
+  state: State;
+  driver: Driver;
+  index: number | undefined;
+};
+
+export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
 
 export type Config = {
   steps?: DriveStep[];
@@ -40,7 +43,7 @@ export type Config = {
   doneBtnText?: string;
 
   // Called after the popover is rendered
-  onPopoverRender?: (popover: PopoverDOM, opts: { config: Config; state: State; driver: Driver }) => void;
+  onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
 
   // State based callbacks, called upon state changes
   onHighlightStarted?: DriverHook;

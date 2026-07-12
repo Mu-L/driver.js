@@ -75,23 +75,14 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const highlightedHook = toStep?.onHighlighted || ctx.getConfig("onHighlighted");
   const deselectedHook = fromStep?.onDeselected || ctx.getConfig("onDeselected");
 
-  const config = ctx.getConfig();
-  const state = ctx.getState();
+  const hookOpts = ctx.getHookOpts();
 
   if (!isFirstHighlight && deselectedHook) {
-    deselectedHook(isFromDummyElement ? undefined : fromElement, fromStep!, {
-      config,
-      state,
-      driver: ctx.getDriver(),
-    });
+    deselectedHook(isFromDummyElement ? undefined : fromElement, fromStep!, hookOpts);
   }
 
   if (highlightStartedHook) {
-    highlightStartedHook(isToDummyElement ? undefined : toElement, toStep, {
-      config,
-      state,
-      driver: ctx.getDriver(),
-    });
+    highlightStartedHook(isToDummyElement ? undefined : toElement, toStep, hookOpts);
   }
 
   const hasDelayedPopover = !isFirstHighlight && isAnimatedTour;
@@ -129,11 +120,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
       trackActiveElement(ctx, toElement);
 
       if (highlightedHook) {
-        highlightedHook(isToDummyElement ? undefined : toElement, toStep, {
-          config: ctx.getConfig(),
-          state: ctx.getState(),
-          driver: ctx.getDriver(),
-        });
+        highlightedHook(isToDummyElement ? undefined : toElement, toStep, ctx.getHookOpts());
       }
 
       ctx.setState("__transitionCallback", undefined);

@@ -1,9 +1,8 @@
-import { Config, DriverHook } from "./config";
+import { DriverHook, HookOpts } from "./config";
 import { Context } from "./context";
-import { Driver, DriveStep } from "./driver";
+import { DriveStep } from "./driver";
 import { destroyDriverClick, onDriverClick } from "./events";
 import { repositionPopover } from "./position";
-import { State } from "./state";
 import { bringInView, getFocusableElements } from "./utils";
 
 export type Side = "top" | "right" | "bottom" | "left";
@@ -29,7 +28,7 @@ export type Popover = {
   prevBtnText?: string;
 
   // Called after the popover is rendered
-  onPopoverRender?: (popover: PopoverDOM, opts: { config: Config; state: State; driver: Driver }) => void;
+  onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
 
   // Button callbacks
   onNextClick?: DriverHook;
@@ -176,21 +175,13 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
         // On the final step the next button acts as the done button, so a
         // dedicated onDoneClick takes precedence over onNextClick when provided.
         if (isDoneStep && onDoneClick) {
-          return onDoneClick(element, step, {
-            config: ctx.getConfig(),
-            state: ctx.getState(),
-            driver: ctx.getDriver(),
-          });
+          return onDoneClick(element, step, ctx.getHookOpts());
         }
 
         // If the user has provided a custom callback, call it
         // otherwise, emit the event.
         if (onNextClick) {
-          return onNextClick(element, step, {
-            config: ctx.getConfig(),
-            state: ctx.getState(),
-            driver: ctx.getDriver(),
-          });
+          return onNextClick(element, step, ctx.getHookOpts());
         } else {
           return ctx.emit("nextClick");
         }
@@ -198,11 +189,7 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
 
       if (!!target.closest(".driver-popover-prev-btn")) {
         if (onPrevClick) {
-          return onPrevClick(element, step, {
-            config: ctx.getConfig(),
-            state: ctx.getState(),
-            driver: ctx.getDriver(),
-          });
+          return onPrevClick(element, step, ctx.getHookOpts());
         } else {
           return ctx.emit("prevClick");
         }
@@ -210,11 +197,7 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
 
       if (!!target.closest(".driver-popover-close-btn")) {
         if (onCloseClick) {
-          return onCloseClick(element, step, {
-            config: ctx.getConfig(),
-            state: ctx.getState(),
-            driver: ctx.getDriver(),
-          });
+          return onCloseClick(element, step, ctx.getHookOpts());
         } else {
           return ctx.emit("closeClick");
         }
@@ -238,11 +221,7 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
 
   const onPopoverRender = step.popover?.onPopoverRender || ctx.getConfig("onPopoverRender");
   if (onPopoverRender) {
-    onPopoverRender(popover, {
-      config: ctx.getConfig(),
-      state: ctx.getState(),
-      driver: ctx.getDriver(),
-    });
+    onPopoverRender(popover, ctx.getHookOpts());
   }
 
   repositionPopover(ctx, element, step);

@@ -70,3 +70,58 @@ describe("lifecycle hooks", () => {
     expect(onHighlightStarted).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("hook opts index", () => {
+  it("exposes the active step index to state hooks", async () => {
+    const onHighlighted = vi.fn();
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS, onHighlighted });
+    d.drive(1);
+    await nextFrame();
+
+    const [, , options] = onHighlighted.mock.calls[0];
+    expect(options.index).toBe(1);
+  });
+
+  it("exposes the index to popover button hooks", () => {
+    const onNextClick = vi.fn();
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS, onNextClick });
+    d.drive(0);
+    navButton("next")?.click();
+
+    const [, , options] = onNextClick.mock.calls[0];
+    expect(options.index).toBe(0);
+  });
+
+  it("exposes the index to onPopoverRender", () => {
+    const onPopoverRender = vi.fn();
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS, onPopoverRender });
+    d.drive(2);
+
+    const [, options] = onPopoverRender.mock.calls[0];
+    expect(options.index).toBe(2);
+  });
+
+  it("exposes the pre-destroy index to onDeselected and onDestroyed", async () => {
+    const onDeselected = vi.fn();
+    const onDestroyed = vi.fn();
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS, onDeselected, onDestroyed });
+    d.drive(2);
+    await nextFrame();
+    d.destroy();
+
+    expect(onDeselected.mock.calls[0][2].index).toBe(2);
+    expect(onDestroyed.mock.calls[0][2].index).toBe(2);
+  });
+
+  it("reports the now-active index in onDeselected during a transition", async () => {
+    const onDeselected = vi.fn();
+    const d = createDriver({ animate: false, steps: SAMPLE_STEPS, onDeselected });
+    d.drive(0);
+    // Let the first highlight commit so moveNext is a real transition.
+    await nextFrame();
+    d.moveNext();
+
+    const [, , options] = onDeselected.mock.calls[0];
+    expect(options.index).toBe(1);
+  });
+});

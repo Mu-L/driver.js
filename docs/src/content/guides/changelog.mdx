@@ -10,6 +10,12 @@ ships, these entries move under a versioned heading.
 
 ## Unreleased
 
+### Added
+
+- `index` on the options passed to every hook, holding the currently active
+  step index (same value as `driverObj.getActiveIndex()`).
+  ([#490](https://github.com/nilbuild/driver.js/issues/490))
+
 ### Fixed
 
 - Each `driver()` call keeps its own config, steps and state, so creating a

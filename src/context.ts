@@ -1,5 +1,5 @@
-import { Config, createConfigStore, GetConfig } from "./config";
-import { createStateStore, GetState, SetState } from "./state";
+import { Config, createConfigStore, GetConfig, HookOpts } from "./config";
+import { createStateStore, GetState, SetState, State } from "./state";
 import { createEmitter, Emitter } from "./emitter";
 import type { Driver } from "./driver";
 
@@ -19,6 +19,8 @@ export type Context = {
 
   getDriver: () => Driver;
   setDriver: (driver: Driver) => void;
+
+  getHookOpts: (stateOverride?: State) => HookOpts;
 };
 
 export function createContext(options: Config = {}): Context {
@@ -45,6 +47,17 @@ export function createContext(options: Config = {}): Context {
     getDriver: () => driver,
     setDriver: (value: Driver) => {
       driver = value;
+    },
+
+    getHookOpts: (stateOverride?: State) => {
+      const activeState = stateOverride || state.getState();
+
+      return {
+        config: config.getConfig(),
+        state: activeState,
+        driver,
+        index: activeState.activeIndex,
+      };
     },
   };
 }
