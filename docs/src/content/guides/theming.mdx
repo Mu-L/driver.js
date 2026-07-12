@@ -75,6 +75,22 @@ Here is the list of classes applied to the popover which you can use in conjunct
 
 Visit the [example page](/docs/styling-popover) for an example that modifies the popover styles.
 
+## Custom Font
+
+The popover text uses the following font stack by default:
+
+```css
+"Helvetica Neue", Inter, ui-sans-serif, "Apple Color Emoji", Helvetica, Arial, sans-serif;
+```
+
+To use your own font, override the `--driver-popover-font-family` CSS variable. It's inherited, so you can set it anywhere above the popover (on `:root`, `body`, or a `popoverClass`) and it applies to the title, description, buttons, and progress text at once.
+
+```css
+:root {
+  --driver-popover-font-family: "Inter", sans-serif;
+}
+```
+
 ## Modifying Popover DOM
 
 Alternatively, you can also use the `onPopoverRender` hook to modify the popover DOM before it is displayed. The hook is called with the popover DOM as the first argument.

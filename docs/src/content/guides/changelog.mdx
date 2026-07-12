@@ -15,9 +15,23 @@ ships, these entries move under a versioned heading.
 - `index` on the options passed to every hook, holding the currently active
   step index (same value as `driverObj.getActiveIndex()`).
   ([#490](https://github.com/nilbuild/driver.js/issues/490))
+- `--driver-popover-font-family` CSS variable to set the popover font in one
+  place, without overriding each text element individually.
+  ([#607](https://github.com/nilbuild/driver.js/issues/607))
+
+### Changed
+
+- The popover title and description now render in the default font stack
+  (`"Helvetica Neue", …`) instead of the browser's default `sans-serif`. An
+  internal rule had been shadowing the intended font. Set
+  `--driver-popover-font-family` to use your own.
 
 ### Fixed
 
+- Icon fonts (Material Icons, Font Awesome, etc.) placed inside a step
+  description are no longer overridden by the popover font and render correctly.
+  ([#510](https://github.com/nilbuild/driver.js/issues/510),
+  [#512](https://github.com/nilbuild/driver.js/issues/512))
 - Each `driver()` call keeps its own config, steps and state, so creating a
   second instance no longer overwrites the first.
   ([#571](https://github.com/nilbuild/driver.js/issues/571))

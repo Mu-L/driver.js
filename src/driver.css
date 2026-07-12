@@ -38,6 +38,16 @@
 /* Popover styles */
 .driver-popover {
   all: unset;
+  font-family: var(
+    --driver-popover-font-family,
+    "Helvetica Neue",
+    Inter,
+    ui-sans-serif,
+    "Apple Color Emoji",
+    Helvetica,
+    Arial,
+    sans-serif
+  );
   box-sizing: border-box;
   color: #2d2d2d;
   margin: 0;
@@ -53,12 +63,8 @@
   background-color: #fff;
 }
 
-.driver-popover * {
-  font-family: "Helvetica Neue", Inter, ui-sans-serif, "Apple Color Emoji", Helvetica, Arial, sans-serif;
-}
-
 .driver-popover-title {
-  font: 19px / normal sans-serif;
+  font-size: 19px;
   font-weight: 700;
   display: block;
   position: relative;
@@ -95,7 +101,7 @@
 
 .driver-popover-description {
   margin-bottom: 0;
-  font: 14px / normal sans-serif;
+  font-size: 14px;
   line-height: 1.5;
   font-weight: 400;
   zoom: 1;
@@ -125,7 +131,7 @@
   text-decoration: none;
   background-color: #ffffff;
   color: #2d2d2d;
-  font: 12px / normal sans-serif;
+  font-size: 12px;
   cursor: pointer;
   outline: 0;
   zoom: 1;
