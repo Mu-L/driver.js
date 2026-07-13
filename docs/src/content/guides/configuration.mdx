@@ -61,6 +61,12 @@ type Config = {
   // Can be configured at the step level as well
   disableActiveInteraction?: boolean;
 
+  // Skip a step whose target element is specified but missing from the DOM,
+  // moving on in the direction of travel instead of showing the centered
+  // fallback popover. Steps without an element are intentional centered steps
+  // and are never skipped. Can be configured at the step level. (default: false)
+  skipMissingElement?: boolean;
+
   // If you want to add custom class to the popover
   popoverClass?: string;
   // Distance between the popover and the highlighted element. (default: 10)
@@ -162,7 +168,7 @@ type Config = {
 >
 > `onDoneClick` lets you detect when the user finishes the tour by clicking the done button on the last step. When provided, it runs instead of `onNextClick` on the last step, and Driver.js won't destroy the tour automatically — you control teardown by calling `driverObj.destroy()` yourself. Like the other click hooks, it can be configured at the driver or step level.
 
-> **`options.index`**: Every hook receives the zero-based index of the currently active step in `options.index` (equivalent to `driverObj.getActiveIndex()`), or `undefined` when driving a single highlight rather than a `steps` array. Note that `index` always reflects the _active_ step, so inside `onDeselected` — which fires for the step being left during a transition — it points at the step being moved to, not the one being deselected.
+> `options.index`: Every hook receives the zero-based index of the currently active step in `options.index` (equivalent to `driverObj.getActiveIndex()`), or `undefined` when driving a single highlight rather than a `steps` array. Note that `index` always reflects the _active_ step, so inside `onDeselected` (which fires for the step being left during a transition) it points at the step being moved to, not the one being deselected.
 
 ## Popover Configuration
 
@@ -265,6 +271,10 @@ type DriveStep = {
 
   // Whether to disable interaction with the highlighted element. (default: false)
   disableActiveInteraction?: boolean;
+
+  // Skip this step when its target element is specified but missing from the
+  // DOM. Overrides the driver-level option for this step. (default: false)
+  skipMissingElement?: boolean;
 
   // Arbitrary data that you can pass to the step in order to support complex custom logic in hooks.
   data?: Record<string, any>;

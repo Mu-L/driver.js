@@ -3,7 +3,7 @@ import { DriveStep } from "./driver";
 import { refreshOverlay, trackActiveElement, transitionStage } from "./overlay";
 import { hidePopover, renderPopover } from "./popover";
 import { repositionPopover } from "./position";
-import { bringInView, isScrollable } from "./utils";
+import { bringInView, isScrollable, resolveElement } from "./utils";
 
 function mountDummyElement(): Element {
   const existingDummy = document.getElementById("driver-dummy-element");
@@ -28,9 +28,7 @@ function mountDummyElement(): Element {
 }
 
 export function highlight(ctx: Context, step: DriveStep) {
-  const { element } = step;
-  let elemObj =
-    typeof element === "function" ? element() : typeof element === "string" ? document.querySelector(element) : element;
+  let elemObj = resolveElement(step.element);
 
   // If the element is not found, we mount a 1px div
   // at the center of the screen to highlight and show

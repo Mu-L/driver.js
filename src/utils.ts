@@ -1,4 +1,17 @@
 import type { Context } from "./context";
+import type { DriveStep } from "./driver";
+
+export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
+  if (typeof element === "function") {
+    return element();
+  }
+
+  if (typeof element === "string") {
+    return document.querySelector(element);
+  }
+
+  return element;
+}
 
 export function isScrollable(element: Element) {
   const style = window.getComputedStyle(element);

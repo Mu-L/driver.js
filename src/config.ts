@@ -27,6 +27,10 @@ export type Config = {
 
   disableActiveInteraction?: boolean;
 
+  // Skip a step whose target element is specified but missing from the DOM.
+  // Element-less steps are intentional centered steps and never skipped. (default: false)
+  skipMissingElement?: boolean;
+
   allowKeyboardControl?: boolean;
 
   // Popover specific configuration
@@ -82,6 +86,7 @@ export function createConfigStore(): ConfigStore {
       overlayOpacity: 0.7,
       smoothScroll: false,
       disableActiveInteraction: false,
+      skipMissingElement: false,
       showProgress: false,
       stagePadding: 10,
       stageRadius: 5,

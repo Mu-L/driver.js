@@ -4,6 +4,7 @@ import { destroyEvents, initEvents, requireRefresh } from "./events";
 import { Config, DriverHook } from "./config";
 import { createContext } from "./context";
 import { destroyHighlight, highlight } from "./highlight";
+import { resolveElement } from "./utils";
 import "./driver.css";
 
 // Re-export the public types so they remain part of the package's type surface.
@@ -19,6 +20,7 @@ export type DriveStep = {
   onDeselected?: DriverHook;
   popover?: Popover;
   disableActiveInteraction?: boolean;
+  skipMissingElement?: boolean;
   data?: Record<string, any>;
 };
 
@@ -212,6 +214,15 @@ export function driver(options: Config = {}): Driver {
     ctx.listen("arrowRightPress", handleArrowRight);
   }
 
+  function shouldSkipStep(step: DriveStep) {
+    const skip = step.skipMissingElement ?? ctx.getConfig("skipMissingElement");
+    if (!skip || !step.element) {
+      return false;
+    }
+
+    return !resolveElement(step.element);
+  }
+
   function drive(stepIndex: number = 0) {
     const steps = ctx.getConfig("steps");
     if (!steps) {
@@ -226,10 +237,24 @@ export function driver(options: Config = {}): Driver {
       return;
     }
 
+    const currentStep = steps[stepIndex];
+
+    if (shouldSkipStep(currentStep)) {
+      const activeIndex = ctx.getState("activeIndex");
+      const direction = typeof activeIndex === "number" && stepIndex < activeIndex ? -1 : 1;
+
+      if (steps[stepIndex + direction]) {
+        drive(stepIndex + direction);
+      } else if (direction === 1) {
+        destroy();
+      }
+
+      return;
+    }
+
     ctx.setState("__activeOnDestroyed", document.activeElement as HTMLElement);
     ctx.setState("activeIndex", stepIndex);
 
-    const currentStep = steps[stepIndex];
     const hasNextStep = steps[stepIndex + 1];
     const hasPreviousStep = steps[stepIndex - 1];
 

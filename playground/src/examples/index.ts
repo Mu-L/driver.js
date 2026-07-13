@@ -7,12 +7,14 @@ import { apiGroup } from "./api";
 import { durationGroup } from "./duration";
 import { scrollGroup } from "./scroll";
 import { instancesGroup } from "./instances";
+import { skipMissingGroup } from "./skip-missing";
 
 export const exampleGroups: ExampleGroup[] = [
   highlightGroup,
   popoverGroup,
   arrowGroup,
   tourGroup,
+  skipMissingGroup,
   instancesGroup,
   durationGroup,
   scrollGroup,

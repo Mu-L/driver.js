@@ -12,6 +12,11 @@ ships, these entries move under a versioned heading.
 
 ### Added
 
+- `skipMissingElement` option (driver and step level) to skip a step whose
+  target element is specified but not in the DOM, instead of showing the
+  centered fallback popover. Element-less steps are never skipped.
+  ([#489](https://github.com/nilbuild/driver.js/issues/489),
+  [#395](https://github.com/nilbuild/driver.js/issues/395))
 - `index` on the options passed to every hook, holding the currently active
   step index (same value as `driverObj.getActiveIndex()`).
   ([#490](https://github.com/nilbuild/driver.js/issues/490))
