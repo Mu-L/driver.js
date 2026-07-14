@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Alignment, Side } from "../src/popover";
 import { createDriver, navButton, nextFrame, popoverEl, progressText, SAMPLE_STEPS, useDriverHarness } from "./utils";
 
@@ -184,6 +184,124 @@ describe("popover rendering", () => {
     d.highlight({ element: "#intro", popover: { title: "Intro" } });
 
     expect(document.querySelector(".driver-popover .my-extra-btn")).not.toBeNull();
+  });
+});
+
+describe("popover config fallbacks", () => {
+  it("falls back to the global button texts when the step sets none", () => {
+    const d = createDriver({ animate: false, nextBtnText: "Global Next", prevBtnText: "Global Prev" });
+    d.highlight({ element: "#intro", popover: { title: "Intro", showButtons: ["next", "previous"] } });
+
+    expect(navButton("next")?.innerHTML).toBe("Global Next");
+    expect(navButton("prev")?.innerHTML).toBe("Global Prev");
+  });
+
+  it("uses the global button texts on intermediate tour steps", () => {
+    const d = createDriver({ animate: false, nextBtnText: "Global Next", steps: SAMPLE_STEPS });
+    d.drive();
+
+    expect(navButton("next")?.innerHTML).toBe("Global Next");
+  });
+
+  it("prefers a step-level popoverClass over the global one", () => {
+    const d = createDriver({ animate: false, popoverClass: "global-theme" });
+    d.highlight({ element: "#intro", popover: { title: "Intro", popoverClass: "step-theme" } });
+
+    expect(popoverEl()?.classList.contains("step-theme")).toBe(true);
+    expect(popoverEl()?.classList.contains("global-theme")).toBe(false);
+  });
+
+  it("prefers a step-level onPopoverRender over the global one", () => {
+    const globalRender = vi.fn();
+    const stepRender = vi.fn();
+    const d = createDriver({ animate: false, onPopoverRender: globalRender });
+    d.highlight({ element: "#intro", popover: { title: "Intro", onPopoverRender: stepRender } });
+
+    expect(stepRender).toHaveBeenCalledTimes(1);
+    expect(globalRender).not.toHaveBeenCalled();
+  });
+
+  it("applies the global disableButtons on a bare highlight", () => {
+    const d = createDriver({ animate: false, disableButtons: ["next"] });
+    d.highlight({ element: "#intro", popover: { title: "Intro", showButtons: ["next"] } });
+
+    expect(navButton("next")?.disabled).toBe(true);
+  });
+
+  it("ignores the global disableButtons during a tour", () => {
+    // drive() always composes a step-level disableButtons (to disable
+    // "previous" on the first step), which shadows the global config. This
+    // pins the long-standing behaviour rather than endorsing it.
+    const d = createDriver({ animate: false, disableButtons: ["next"], steps: SAMPLE_STEPS });
+    d.drive();
+
+    expect(navButton("next")?.disabled).toBe(false);
+    expect(navButton("prev")?.disabled).toBe(true);
+  });
+
+  it("hides the close button in a tour when allowClose is false", () => {
+    const d = createDriver({ animate: false, allowClose: false, steps: SAMPLE_STEPS });
+    d.drive();
+
+    expect(navButton("close")?.style.display).toBe("none");
+    expect(navButton("next")?.style.display).toBe("block");
+  });
+
+  it("honours a step-level showProgress override", () => {
+    const d = createDriver({
+      animate: false,
+      steps: [
+        { element: "#intro", popover: { title: "Step 1", showProgress: true } },
+        { element: "#card-1", popover: { title: "Step 2" } },
+      ],
+    });
+    d.drive();
+
+    expect(progressText()).toBe("1 of 2");
+    expect(document.querySelector<HTMLElement>(".driver-popover-progress-text")?.style.display).toBe("block");
+  });
+});
+
+describe("popover accessibility contract", () => {
+  it("renders the popover as a labelled dialog", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({ element: "#intro", popover: { title: "Intro", description: "Description" } });
+
+    const wrapper = popoverEl() as HTMLElement;
+    expect(wrapper.id).toBe("driver-popover-content");
+    expect(wrapper.getAttribute("role")).toBe("dialog");
+    expect(wrapper.getAttribute("aria-labelledby")).toBe("driver-popover-title");
+    expect(wrapper.getAttribute("aria-describedby")).toBe("driver-popover-description");
+    expect(document.getElementById("driver-popover-title")).not.toBeNull();
+    expect(document.getElementById("driver-popover-description")).not.toBeNull();
+  });
+
+  it("hides the title element when only a description is given", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({ element: "#intro", popover: { description: "Only description" } });
+
+    expect(document.querySelector<HTMLElement>(".driver-popover-title")?.style.display).toBe("none");
+    expect(document.querySelector<HTMLElement>(".driver-popover-description")?.style.display).toBe("block");
+  });
+});
+
+describe("popover state exposure", () => {
+  it("exposes the rendered popover DOM through getState", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({ element: "#intro", popover: { title: "Intro" } });
+
+    const popover = d.getState("popover");
+    expect(popover?.wrapper).toBe(popoverEl());
+    expect(popover?.nextButton).toBe(navButton("next"));
+    expect(popover?.title.textContent).toBe("Intro");
+  });
+
+  it("clears the popover from state on destroy", () => {
+    const d = createDriver({ animate: false });
+    d.highlight({ element: "#intro", popover: { title: "Intro" } });
+    d.destroy();
+
+    expect(d.getState("popover")).toBeUndefined();
   });
 });
 
