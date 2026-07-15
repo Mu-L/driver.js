@@ -338,7 +338,7 @@ export function driver(options: Config = {}): Driver {
     document.body.style.removeProperty("--driver-animation-duration");
 
     destroyEvents(ctx);
-    destroyPopover(ctx);
+    destroyPopover(ctx.getState("popover"));
     destroyHighlight();
     destroyOverlay(ctx);
     ctx.resetEmitter();

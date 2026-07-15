@@ -1,8 +1,8 @@
 import { Context } from "./context";
 import { DriveStep } from "./driver";
 import { refreshOverlay, trackActiveElement, transitionStage } from "./overlay";
-import { hidePopover, renderPopover } from "./popover";
-import { repositionPopover } from "./position";
+import { hidePopover } from "./popover";
+import { renderStepPopover, repositionStepPopover } from "./step-popover";
 import { bringInView, isScrollable, resolveElement } from "./utils";
 
 function mountDummyElement(): Element {
@@ -51,7 +51,7 @@ export function refreshActiveHighlight(ctx: Context) {
 
   trackActiveElement(ctx, activeHighlight);
   refreshOverlay(ctx);
-  repositionPopover(ctx, activeHighlight, activeStep);
+  repositionStepPopover(ctx, activeHighlight, activeStep);
 }
 
 function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) {
@@ -86,7 +86,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
   const hasDelayedPopover = !isFirstHighlight && isAnimatedTour;
   let isPopoverRendered = false;
 
-  hidePopover(ctx);
+  hidePopover(ctx.getState("popover"));
 
   ctx.setState("previousStep", fromStep);
   ctx.setState("previousElement", fromElement);
@@ -108,7 +108,7 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
     const isHalfwayThrough = timeRemaining <= duration / 2;
 
     if (toStep.popover && isHalfwayThrough && !isPopoverRendered && hasDelayedPopover) {
-      renderPopover(ctx, toElement, toStep);
+      renderStepPopover(ctx, toElement, toStep);
       isPopoverRendered = true;
     }
 
@@ -135,9 +135,9 @@ function transferHighlight(ctx: Context, toElement: Element, toStep: DriveStep) 
 
   window.requestAnimationFrame(animate);
 
-  bringInView(ctx, toElement);
+  bringInView(toElement, ctx.getConfig("smoothScroll"));
   if (!hasDelayedPopover && toStep.popover) {
-    renderPopover(ctx, toElement, toStep);
+    renderStepPopover(ctx, toElement, toStep);
   }
 
   document.querySelectorAll(".driver-active-element-parent").forEach(element => {

@@ -1,14 +1,16 @@
-import { DriverHook, HookOpts } from "./config";
-import { Context } from "./context";
-import { DriveStep } from "./driver";
+import type { DriverHook, HookOpts } from "./config";
 import { destroyDriverClick, onDriverClick } from "./events";
-import { repositionPopover } from "./position";
+import { PositionOptions, repositionPopover } from "./position";
 import { bringInView, getFocusableElements } from "./utils";
 
 export type Side = "top" | "right" | "bottom" | "left";
 export type Alignment = "start" | "center" | "end";
 export type AllowedButtons = "next" | "previous" | "close";
 
+// The popover configuration of a tour step / highlight. This is the public
+// shape users pass in; the primitive below works on the fully resolved
+// PopoverRenderOptions instead, which the tour derives from this and its
+// global config (see step-popover.ts).
 export type Popover = {
   title?: string;
   description?: string;
@@ -50,8 +52,39 @@ export type PopoverDOM = {
   footerButtons: HTMLElement;
 };
 
-export function hidePopover(ctx: Context) {
-  const popover = ctx.getState("popover");
+// Everything the primitive needs to render a popover, fully resolved by the
+// caller — no config or state fallbacks happen at this level.
+export type PopoverRenderOptions = {
+  title?: string;
+  description?: string;
+
+  showButtons: AllowedButtons[];
+  disableButtons: AllowedButtons[];
+  showProgress: boolean;
+
+  progressText: string;
+  nextBtnText: string;
+  prevBtnText: string;
+
+  // Style the next button as the tour's done button.
+  doneButton?: boolean;
+
+  popoverClass?: string;
+  smoothScroll?: boolean;
+
+  // Button clicks, resolved by the caller. Deciding between step hooks,
+  // global hooks and default behaviour is the caller's business.
+  onNextClick?: () => void;
+  onPrevClick?: () => void;
+  onCloseClick?: () => void;
+
+  // Called once the popover is in the DOM, before it is positioned.
+  onRender?: (popover: PopoverDOM) => void;
+
+  position: PositionOptions;
+};
+
+export function hidePopover(popover: PopoverDOM | undefined) {
   if (!popover) {
     return;
   }
@@ -59,36 +92,18 @@ export function hidePopover(ctx: Context) {
   popover.wrapper.style.display = "none";
 }
 
-export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
-  let popover = ctx.getState("popover");
-  if (popover) {
-    destroyDriverClick(popover.wrapper);
-    popover.wrapper.remove();
-  }
-
-  popover = createPopover();
+export function renderPopover(anchor: Element, options: PopoverRenderOptions): PopoverDOM {
+  const popover = createPopover();
   document.body.appendChild(popover.wrapper);
 
-  const {
-    title,
-    description,
-    showButtons,
-    disableButtons,
-    showProgress,
-
-    nextBtnText = ctx.getConfig("nextBtnText") || "Next",
-    prevBtnText = ctx.getConfig("prevBtnText") || "Previous",
-    progressText = ctx.getConfig("progressText") || "{current} of {total}",
-  } = step.popover || {};
+  const { title, description, showButtons, disableButtons, showProgress, nextBtnText, prevBtnText, progressText } =
+    options;
 
   popover.nextButton.innerHTML = nextBtnText;
   popover.previousButton.innerHTML = prevBtnText;
   popover.progress.innerHTML = progressText;
 
-  const steps = ctx.getConfig("steps") || [];
-  const activeIndex = ctx.getState("activeIndex");
-  const isDoneStep = activeIndex !== undefined && activeIndex === steps.length - 1;
-  if (isDoneStep) {
+  if (options.doneButton) {
     popover.nextButton.classList.add("driver-popover-done-btn");
   }
 
@@ -106,35 +121,31 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
     popover.description.style.display = "none";
   }
 
-  const showButtonsConfig: AllowedButtons[] = showButtons || ctx.getConfig("showButtons")!;
-  const showProgressConfig = showProgress || ctx.getConfig("showProgress") || false;
-  const showFooter =
-    showButtonsConfig?.includes("next") || showButtonsConfig?.includes("previous") || showProgressConfig;
+  const showFooter = showButtons.includes("next") || showButtons.includes("previous") || showProgress;
 
-  popover.closeButton.style.display = showButtonsConfig.includes("close") ? "block" : "none";
+  popover.closeButton.style.display = showButtons.includes("close") ? "block" : "none";
 
   if (showFooter) {
     popover.footer.style.display = "flex";
 
-    popover.progress.style.display = showProgressConfig ? "block" : "none";
-    popover.nextButton.style.display = showButtonsConfig.includes("next") ? "block" : "none";
-    popover.previousButton.style.display = showButtonsConfig.includes("previous") ? "block" : "none";
+    popover.progress.style.display = showProgress ? "block" : "none";
+    popover.nextButton.style.display = showButtons.includes("next") ? "block" : "none";
+    popover.previousButton.style.display = showButtons.includes("previous") ? "block" : "none";
   } else {
     popover.footer.style.display = "none";
   }
 
-  const disabledButtonsConfig: AllowedButtons[] = disableButtons || ctx.getConfig("disableButtons")! || [];
-  if (disabledButtonsConfig?.includes("next")) {
+  if (disableButtons.includes("next")) {
     popover.nextButton.disabled = true;
     popover.nextButton.classList.add("driver-popover-btn-disabled");
   }
 
-  if (disabledButtonsConfig?.includes("previous")) {
+  if (disableButtons.includes("previous")) {
     popover.previousButton.disabled = true;
     popover.previousButton.classList.add("driver-popover-btn-disabled");
   }
 
-  if (disabledButtonsConfig?.includes("close")) {
+  if (disableButtons.includes("close")) {
     popover.closeButton.disabled = true;
     popover.closeButton.classList.add("driver-popover-btn-disabled");
   }
@@ -157,8 +168,7 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
   popoverArrow.className = "driver-popover-arrow";
 
   // Reset any custom classes on the popover
-  const customPopoverClass = step.popover?.popoverClass || ctx.getConfig("popoverClass") || "";
-  popoverWrapper.className = `driver-popover ${customPopoverClass}`.trim();
+  popoverWrapper.className = `driver-popover ${options.popoverClass || ""}`.trim();
 
   // Handles the popover button clicks
   onDriverClick(
@@ -166,41 +176,16 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
     e => {
       const target = e.target as HTMLElement;
 
-      const onNextClick = step.popover?.onNextClick || ctx.getConfig("onNextClick");
-      const onPrevClick = step.popover?.onPrevClick || ctx.getConfig("onPrevClick");
-      const onCloseClick = step.popover?.onCloseClick || ctx.getConfig("onCloseClick");
-      const onDoneClick = step.popover?.onDoneClick || ctx.getConfig("onDoneClick");
-
       if (!!target.closest(".driver-popover-next-btn")) {
-        // On the final step the next button acts as the done button, so a
-        // dedicated onDoneClick takes precedence over onNextClick when provided.
-        if (isDoneStep && onDoneClick) {
-          return onDoneClick(element, step, ctx.getHookOpts());
-        }
-
-        // If the user has provided a custom callback, call it
-        // otherwise, emit the event.
-        if (onNextClick) {
-          return onNextClick(element, step, ctx.getHookOpts());
-        } else {
-          return ctx.emit("nextClick");
-        }
+        return options.onNextClick?.();
       }
 
       if (!!target.closest(".driver-popover-prev-btn")) {
-        if (onPrevClick) {
-          return onPrevClick(element, step, ctx.getHookOpts());
-        } else {
-          return ctx.emit("prevClick");
-        }
+        return options.onPrevClick?.();
       }
 
       if (!!target.closest(".driver-popover-close-btn")) {
-        if (onCloseClick) {
-          return onCloseClick(element, step, ctx.getHookOpts());
-        } else {
-          return ctx.emit("closeClick");
-        }
+        return options.onCloseClick?.();
       }
 
       return undefined;
@@ -209,7 +194,7 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
       // Only prevent the default action if we're clicking on a driver button.
       // This allows links inside the popover title/description, as well as
       // custom buttons added through onPopoverRender, to behave normally.
-      if (popover?.description.contains(target) || popover?.title.contains(target)) {
+      if (popover.description.contains(target) || popover.title.contains(target)) {
         return false;
       }
 
@@ -217,26 +202,24 @@ export function renderPopover(ctx: Context, element: Element, step: DriveStep) {
     }
   );
 
-  ctx.setState("popover", popover);
+  options.onRender?.(popover);
 
-  const onPopoverRender = step.popover?.onPopoverRender || ctx.getConfig("onPopoverRender");
-  if (onPopoverRender) {
-    onPopoverRender(popover, ctx.getHookOpts());
-  }
+  repositionPopover(popover, anchor, options.position);
+  repositionOnImagesLoad(popover, anchor, options.position);
+  bringInView(popoverWrapper, options.smoothScroll);
 
-  repositionPopover(ctx, element, step);
-  repositionOnImagesLoad(ctx, popover, element, step);
-  bringInView(ctx, popoverWrapper);
-
-  // Focus on the first focusable element in active element or popover
-  const isToDummyElement = element.classList.contains("driver-dummy-element");
-  const focusableElement = getFocusableElements([popoverWrapper, ...(isToDummyElement ? [] : [element])]);
+  // Focus on the first focusable element in the popover or the anchor. The
+  // anchor is always scanned: a 0x0 anchor (like the tour's dummy element for
+  // anchor-less popovers) never yields a focusable element anyway.
+  const focusableElement = getFocusableElements([popoverWrapper, anchor]);
   if (focusableElement.length > 0) {
     focusableElement[0].focus();
   }
+
+  return popover;
 }
 
-function repositionOnImagesLoad(ctx: Context, popover: PopoverDOM, element: Element, step: DriveStep) {
+function repositionOnImagesLoad(popover: PopoverDOM, anchor: Element, position: PositionOptions) {
   const images = popover.wrapper.querySelectorAll("img");
 
   images.forEach(image => {
@@ -244,7 +227,7 @@ function repositionOnImagesLoad(ctx: Context, popover: PopoverDOM, element: Elem
       return;
     }
 
-    const reposition = () => repositionPopover(ctx, element, step);
+    const reposition = () => repositionPopover(popover, anchor, position);
 
     image.addEventListener("load", reposition, { once: true });
     image.addEventListener("error", reposition, { once: true });
@@ -321,8 +304,7 @@ function createPopover(): PopoverDOM {
   };
 }
 
-export function destroyPopover(ctx: Context) {
-  const popover = ctx.getState("popover");
+export function destroyPopover(popover: PopoverDOM | undefined) {
   if (!popover) {
     return;
   }

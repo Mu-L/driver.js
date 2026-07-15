@@ -1,11 +1,26 @@
-import { Context } from "./context";
-import { DriveStep } from "./driver";
-import type { Alignment, Side } from "./popover";
+import type { Alignment, PopoverDOM, Side } from "./popover";
+
+// Pure positioning of a popover box against an anchor element. Anything the
+// tour derives from its config or state (paddings, offsets, the modal-like
+// centered placement) is resolved by the caller and passed in through
+// PositionOptions, so this module stays free of driver internals.
 
 // Internal placement. Beyond the public sides it includes "over", used when
-// there is no target element (or the popover is intentionally centered like a
-// modal). "over" is not part of the public `side` option.
+// the popover is intentionally centered in the viewport (e.g. an anchor-less,
+// modal-like popover). "over" is not part of the public `side` option.
 type Placement = Side | "over";
+
+export type PositionOptions = {
+  side: Side;
+  align: Alignment;
+  // Gap kept between the anchor's box and the popover.
+  offset: number;
+  // How far an align "start"/"end" popover reaches past the anchor's box; the
+  // tour passes stagePadding here so the popover lines up with the cutout.
+  padding: number;
+  // Center in the viewport instead of positioning against the anchor.
+  centered?: boolean;
+};
 
 type PopoverDimensions = {
   width: number;
@@ -14,20 +29,12 @@ type PopoverDimensions = {
   realHeight: number;
 };
 
-function getPopoverDimensions(ctx: Context): PopoverDimensions | undefined {
-  const popover = ctx.getState("popover");
-  if (!popover?.wrapper) {
-    return;
-  }
-
+function getPopoverDimensions(popover: PopoverDOM, offset: number): PopoverDimensions {
   const boundingClientRect = popover.wrapper.getBoundingClientRect();
 
-  const stagePadding = ctx.getConfig("stagePadding") || 0;
-  const popoverOffset = ctx.getConfig("popoverOffset") || 0;
-
   return {
-    width: boundingClientRect.width + stagePadding + popoverOffset,
-    height: boundingClientRect.height + stagePadding + popoverOffset,
+    width: boundingClientRect.width + offset,
+    height: boundingClientRect.height + offset,
 
     realWidth: boundingClientRect.width,
     realHeight: boundingClientRect.height,
@@ -123,22 +130,14 @@ function calculateLeftForTopBottom(
   return 0;
 }
 
-export function repositionPopover(ctx: Context, element: Element, step: DriveStep) {
-  const popover = ctx.getState("popover");
-  if (!popover) {
-    return;
-  }
+export function repositionPopover(popover: PopoverDOM, anchor: Element, options: PositionOptions) {
+  const { align: requiredAlignment, side } = options;
+  const requiredSide: Placement = options.centered ? "over" : side;
+  const popoverPadding = options.padding;
 
-  const { align = "start", side = "bottom" } = step?.popover || {};
-
-  // Configure the popover positioning
-  const requiredAlignment: Alignment = align;
-  const requiredSide: Placement = element.id === "driver-dummy-element" ? "over" : side;
-  const popoverPadding = ctx.getConfig("stagePadding") || 0;
-
-  const popoverDimensions = getPopoverDimensions(ctx)!;
+  const popoverDimensions = getPopoverDimensions(popover, options.offset);
   const popoverArrowDimensions = popover.arrow.getBoundingClientRect();
-  const elementDimensions = element.getBoundingClientRect();
+  const elementDimensions = anchor.getBoundingClientRect();
 
   const topValue = elementDimensions.top - popoverDimensions!.height;
   let isTopOptimal = topValue >= 0;
@@ -260,7 +259,7 @@ export function repositionPopover(ctx: Context, element: Element, step: DriveSte
   // Point the arrow at the element. When no side is optimal the popover is
   // detached from the element (centered/pinned to the bottom of the screen),
   // so there is nothing sensible to point at and the arrow is hidden.
-  renderPopoverArrow(ctx, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, element);
+  renderPopoverArrow(popover, noneOptimal ? "over" : popoverRenderedSide, requiredAlignment, anchor);
 
   [...popover.wrapper.classList]
     .filter(className => className.startsWith("driver-popover-side-") || className.startsWith("driver-popover-align-"))
@@ -367,12 +366,7 @@ export function resolveArrowSide(
   return element.right <= popover.left ? "right" : "left";
 }
 
-function renderPopoverArrow(ctx: Context, side: Placement, alignment: Alignment, element: Element) {
-  const popover = ctx.getState("popover");
-  if (!popover) {
-    return;
-  }
-
+function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Alignment, anchor: Element) {
   const popoverArrow = popover.arrow;
 
   // Reset everything a previous render may have set, both classes and the
@@ -390,7 +384,7 @@ function renderPopoverArrow(ctx: Context, side: Placement, alignment: Alignment,
     return;
   }
 
-  const elementRect = element.getBoundingClientRect();
+  const elementRect = anchor.getBoundingClientRect();
   const popoverRect = popover.wrapper.getBoundingClientRect();
 
   const arrowSide = resolveArrowSide(side, elementRect, popoverRect);

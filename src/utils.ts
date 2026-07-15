@@ -1,4 +1,3 @@
-import type { Context } from "./context";
 import type { DriveStep } from "./driver";
 
 export function resolveElement(element: DriveStep["element"]): Element | null | undefined {
@@ -43,12 +42,10 @@ export function getFocusableElements(parentEls: Element[] | HTMLElement[]) {
     });
 }
 
-export function bringInView(ctx: Context, element: Element) {
+export function bringInView(element: Element, shouldSmoothScroll?: boolean) {
   if (!element || isElementInView(element)) {
     return;
   }
-
-  const shouldSmoothScroll = ctx.getConfig("smoothScroll");
 
   const isTallerThanViewport = (element as HTMLElement).offsetHeight > window.innerHeight;
 
