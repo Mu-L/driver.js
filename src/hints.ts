@@ -1,0 +1,486 @@
+import {
+  Alignment,
+  destroyPopover,
+  PopoverDOM,
+  PopoverRenderOptions,
+  renderPopover,
+  Side,
+  hidePopover,
+} from "./popover";
+import { PositionOptions, repositionPopover } from "./position";
+import { resolveElement } from "./utils";
+import "./hints.css";
+
+export type HintBeacon = {
+  // Which edge of the element the beacon sits on, and where along that edge.
+  // Together they give the twelve anchor points of the element's box.
+  side?: Side;
+  align?: Alignment;
+  animate?: boolean;
+  className?: string;
+};
+
+export type HintPopover = {
+  title?: string;
+  description?: string;
+  side?: Side;
+  align?: Alignment;
+  popoverClass?: string;
+
+  // The dismiss button. Hidden with `showButton: false`, leaving a popover
+  // that is only dismissed programmatically.
+  showButton?: boolean;
+  buttonText?: string;
+
+  onPopoverRender?: (popover: PopoverDOM, opts: { hint: DriverHint; hints: Hints }) => void;
+};
+
+export type HintHook = (element: Element, hint: DriverHint, opts: { config: HintsConfig; hints: Hints }) => void;
+
+export type DriverHint = {
+  element: string | Element | (() => Element);
+
+  // Stable identity for open/dismiss/restore and for persisting dismissals.
+  // Defaults to the hint's index in the array.
+  id?: string;
+
+  beacon?: HintBeacon;
+  popover?: HintPopover;
+
+  onOpen?: HintHook;
+  onDismiss?: HintHook;
+
+  data?: Record<string, any>;
+};
+
+export type HintsConfig = {
+  hints?: DriverHint[];
+
+  // Defaults for every hint; a hint's own values win.
+  beacon?: HintBeacon;
+  buttonText?: string;
+  popoverClass?: string;
+  popoverOffset?: number;
+
+  onOpen?: HintHook;
+  onDismiss?: HintHook;
+};
+
+export interface Hints {
+  show: () => void;
+  hide: () => void;
+  open: (id: string | number) => void;
+  close: () => void;
+  dismiss: (id: string | number) => void;
+  restore: (id: string | number) => void;
+  setHints: (hints: DriverHint[]) => void;
+  getHints: () => DriverHint[];
+  getActive: () => DriverHint | undefined;
+  isVisible: () => boolean;
+  refresh: () => void;
+}
+
+type MountedHint = {
+  hint: DriverHint;
+  id: string;
+  element: Element;
+  beacon: HTMLButtonElement;
+  observer?: IntersectionObserver;
+};
+
+export function hints(config: HintsConfig = {}): Hints {
+  let currentConfig: HintsConfig = { ...config };
+  let mounted: MountedHint[] = [];
+  let dismissed = new Set<string>();
+  let teardown: (() => void)[] = [];
+
+  let activeId: string | undefined;
+  let popover: PopoverDOM | undefined;
+  let refreshTimeout: number | undefined;
+  let isVisible = false;
+
+  function hintId(hint: DriverHint, index: number): string {
+    return hint.id ?? `${index}`;
+  }
+
+  function find(id: string | number): MountedHint | undefined {
+    return mounted.find(entry => entry.id === `${id}`);
+  }
+
+  function beaconConfig(hint: DriverHint): HintBeacon {
+    return { ...currentConfig.beacon, ...hint.beacon };
+  }
+
+  function createBeacon(hint: DriverHint, id: string): HTMLButtonElement {
+    const beacon = document.createElement("button");
+    const { animate, className } = beaconConfig(hint);
+
+    beacon.type = "button";
+    beacon.className = `driver-hint ${className || ""}`.trim();
+    if (animate === false) {
+      beacon.classList.add("driver-hint-no-animation");
+    }
+
+    beacon.setAttribute("aria-label", hint.popover?.title || "Show hint");
+    beacon.setAttribute("aria-haspopup", "dialog");
+    beacon.setAttribute("aria-expanded", "false");
+
+    const pulse = document.createElement("span");
+    pulse.className = "driver-hint-pulse";
+
+    const dot = document.createElement("span");
+    dot.className = "driver-hint-dot";
+
+    beacon.appendChild(pulse);
+    beacon.appendChild(dot);
+
+    beacon.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggle(id);
+    });
+
+    return beacon;
+  }
+
+  // The beacon is centered on its anchor point by CSS, so this only has to
+  // find the point itself.
+  function positionBeacon(entry: MountedHint) {
+    const { side = "top", align = "end" } = beaconConfig(entry.hint);
+    const rect = entry.element.getBoundingClientRect();
+
+    let top: number;
+    let left: number;
+
+    if (side === "top" || side === "bottom") {
+      top = side === "top" ? rect.top : rect.bottom;
+      left = align === "start" ? rect.left : align === "center" ? rect.left + rect.width / 2 : rect.right;
+    } else {
+      left = side === "left" ? rect.left : rect.right;
+      top = align === "start" ? rect.top : align === "center" ? rect.top + rect.height / 2 : rect.bottom;
+    }
+
+    entry.beacon.style.top = `${top}px`;
+    entry.beacon.style.left = `${left}px`;
+  }
+
+  // Hide the beacon when its element scrolls out of view (or out of a
+  // scrollable container), so it never floats over unrelated UI.
+  function observeVisibility(entry: MountedHint) {
+    if (typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    entry.observer = new IntersectionObserver(([intersection]) => {
+      entry.beacon.classList.toggle("driver-hint-hidden", !intersection.isIntersecting);
+
+      if (!intersection.isIntersecting && activeId === entry.id) {
+        close();
+      }
+    });
+
+    entry.observer.observe(entry.element);
+  }
+
+  function mountHint(hint: DriverHint, id: string) {
+    const element = resolveElement(hint.element);
+    // A hint without an anchor has nothing to point at. It is skipped rather
+    // than centered like a tour's element-less popover, and picked up on the
+    // next show()/refresh() if the element appears later.
+    if (!element) {
+      return;
+    }
+
+    const beacon = createBeacon(hint, id);
+    document.body.appendChild(beacon);
+
+    const entry: MountedHint = { hint, id, element, beacon };
+    mounted.push(entry);
+
+    positionBeacon(entry);
+    observeVisibility(entry);
+  }
+
+  function mountHints() {
+    (currentConfig.hints || []).forEach((hint, index) => {
+      const id = hintId(hint, index);
+      if (dismissed.has(id)) {
+        return;
+      }
+
+      mountHint(hint, id);
+    });
+  }
+
+  function unmountHints() {
+    mounted.forEach(entry => {
+      entry.observer?.disconnect();
+      entry.beacon.remove();
+    });
+
+    mounted = [];
+  }
+
+  function requireRefresh() {
+    if (refreshTimeout) {
+      window.cancelAnimationFrame(refreshTimeout);
+    }
+
+    refreshTimeout = window.requestAnimationFrame(() => refresh());
+  }
+
+  function bindListeners() {
+    const onScroll = () => requireRefresh();
+    const onResize = () => requireRefresh();
+
+    const onDocumentClick = (event: MouseEvent) => {
+      if (!activeId) {
+        return;
+      }
+
+      const target = event.target as Node;
+      // Clicks on the popover keep it open; clicks on a beacon are already
+      // handled by the beacon itself (which toggles or swaps the popover).
+      if (popover?.wrapper.contains(target) || mounted.some(entry => entry.beacon.contains(target))) {
+        return;
+      }
+
+      close();
+    };
+
+    const onKeyup = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !activeId) {
+        return;
+      }
+
+      const beacon = find(activeId)?.beacon;
+      close();
+      // Escape came from the keyboard, so send focus back where it started.
+      beacon?.focus();
+    };
+
+    // Capture, so scrolling inside a nested container repositions the beacons
+    // too — those events never reach the window during the bubble phase.
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("click", onDocumentClick);
+    window.addEventListener("keyup", onKeyup);
+
+    teardown = [
+      () => window.removeEventListener("scroll", onScroll, true),
+      () => window.removeEventListener("resize", onResize),
+      () => document.removeEventListener("click", onDocumentClick),
+      () => window.removeEventListener("keyup", onKeyup),
+    ];
+
+    // A tour takes over the screen, so an open hint steps aside. The tour
+    // marks the body while it runs, which lets this work with any driver
+    // instance without the two knowing about each other. The beacons
+    // themselves are hidden by CSS off the same marker.
+    if (typeof MutationObserver === "undefined") {
+      return;
+    }
+
+    const tourObserver = new MutationObserver(() => {
+      if (!document.body.classList.contains("driver-active")) {
+        return;
+      }
+
+      close();
+    });
+
+    tourObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    teardown.push(() => tourObserver.disconnect());
+  }
+
+  function popoverPosition(entry: MountedHint): PositionOptions {
+    return {
+      side: entry.hint.popover?.side || "bottom",
+      align: entry.hint.popover?.align || "start",
+      // The popover hangs off the beacon, and there is no stage to clear.
+      offset: currentConfig.popoverOffset ?? 10,
+      padding: 0,
+    };
+  }
+
+  function popoverOptions(entry: MountedHint): PopoverRenderOptions {
+    const hintPopover = entry.hint.popover || {};
+    const showButton = hintPopover.showButton ?? true;
+
+    return {
+      title: hintPopover.title,
+      description: hintPopover.description,
+
+      // A hint is a single self-contained callout: one dismiss button, no
+      // navigation, no progress, and no separate close button.
+      showButtons: showButton ? ["next"] : [],
+      disableButtons: [],
+      showProgress: false,
+      progressText: "",
+      nextBtnText: hintPopover.buttonText ?? currentConfig.buttonText ?? "Got it",
+      prevBtnText: "",
+
+      popoverClass: `driver-hint-popover ${hintPopover.popoverClass || currentConfig.popoverClass || ""}`.trim(),
+
+      onNextClick: () => dismiss(entry.id),
+      onRender: popoverDom => hintPopover.onPopoverRender?.(popoverDom, { hint: entry.hint, hints: api }),
+
+      position: popoverPosition(entry),
+    };
+  }
+
+  function closePopover() {
+    if (!popover) {
+      return;
+    }
+
+    find(activeId!)?.beacon.setAttribute("aria-expanded", "false");
+
+    destroyPopover(popover);
+    popover = undefined;
+    activeId = undefined;
+  }
+
+  function open(id: string | number) {
+    const entry = find(id);
+    if (!entry) {
+      return;
+    }
+
+    // Only one hint is open at a time; opening another swaps it out.
+    closePopover();
+
+    activeId = entry.id;
+    entry.beacon.setAttribute("aria-expanded", "true");
+    popover = renderPopover(entry.beacon, popoverOptions(entry));
+
+    const onOpen = entry.hint.onOpen || currentConfig.onOpen;
+    onOpen?.(entry.element, entry.hint, { config: currentConfig, hints: api });
+  }
+
+  function close() {
+    closePopover();
+  }
+
+  function toggle(id: string | number) {
+    if (activeId === `${id}`) {
+      close();
+      return;
+    }
+
+    open(id);
+  }
+
+  function dismiss(id: string | number) {
+    const entry = find(id);
+    if (!entry) {
+      return;
+    }
+
+    if (activeId === entry.id) {
+      closePopover();
+    }
+
+    dismissed.add(entry.id);
+
+    entry.observer?.disconnect();
+    entry.beacon.remove();
+    mounted = mounted.filter(mountedEntry => mountedEntry !== entry);
+
+    const onDismiss = entry.hint.onDismiss || currentConfig.onDismiss;
+    onDismiss?.(entry.element, entry.hint, { config: currentConfig, hints: api });
+  }
+
+  function restore(id: string | number) {
+    const key = `${id}`;
+    if (!dismissed.delete(key) || !isVisible || find(key)) {
+      return;
+    }
+
+    const list = currentConfig.hints || [];
+    const index = list.findIndex((hint, hintIndex) => hintId(hint, hintIndex) === key);
+    if (index === -1) {
+      return;
+    }
+
+    mountHint(list[index], key);
+  }
+
+  function refresh() {
+    mounted.forEach(positionBeacon);
+
+    const active = activeId ? find(activeId) : undefined;
+    if (!active || !popover) {
+      return;
+    }
+
+    repositionPopover(popover, active.beacon, popoverPosition(active));
+
+    // The beacon is gone from the screen, so the popover has nothing to hang
+    // off; the IntersectionObserver closes it, this just avoids a flash.
+    if (active.beacon.classList.contains("driver-hint-hidden")) {
+      hidePopover(popover);
+    }
+  }
+
+  function show() {
+    if (isVisible) {
+      // Idempotent: re-resolve elements that have appeared since.
+      refresh();
+      return;
+    }
+
+    isVisible = true;
+    mountHints();
+    bindListeners();
+  }
+
+  function hide() {
+    if (!isVisible) {
+      return;
+    }
+
+    isVisible = false;
+    closePopover();
+    unmountHints();
+
+    teardown.forEach(off => off());
+    teardown = [];
+
+    if (!refreshTimeout) {
+      return;
+    }
+
+    window.cancelAnimationFrame(refreshTimeout);
+    refreshTimeout = undefined;
+  }
+
+  function setHints(list: DriverHint[]) {
+    currentConfig.hints = list;
+    dismissed.clear();
+
+    if (!isVisible) {
+      return;
+    }
+
+    closePopover();
+    unmountHints();
+    mountHints();
+  }
+
+  const api: Hints = {
+    show,
+    hide,
+    open,
+    close,
+    dismiss,
+    restore,
+    setHints,
+    getHints: () => currentConfig.hints || [],
+    getActive: () => (activeId ? find(activeId)?.hint : undefined),
+    isVisible: () => isVisible,
+    refresh,
+  };
+
+  return api;
+}

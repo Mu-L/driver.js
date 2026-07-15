@@ -1,0 +1,71 @@
+/* Beacon styles. The hint popover reuses the popover styles from driver.css,
+   so this stylesheet complements that one rather than replacing it. */
+
+.driver-hint {
+  all: unset;
+  box-sizing: border-box;
+  position: fixed;
+  display: block;
+  width: var(--driver-hint-size, 20px);
+  height: var(--driver-hint-size, 20px);
+  cursor: pointer;
+  /* Below the popover, above the page. */
+  z-index: 999999998;
+  /* The beacon is centered on the anchor point set inline by the script. */
+  transform: translate(-50%, -50%);
+}
+
+.driver-hint-hidden {
+  display: none;
+}
+
+.driver-hint-dot,
+.driver-hint-pulse {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--driver-hint-color, #2d2d2d);
+}
+
+.driver-hint-dot {
+  /* The solid core, half the size of the beacon box. */
+  inset: 25%;
+}
+
+.driver-hint-pulse {
+  inset: 0;
+  opacity: 0.6;
+  animation: driver-hint-pulse var(--driver-hint-animation-duration, 2s) ease-out infinite;
+}
+
+@keyframes driver-hint-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.6;
+  }
+
+  70% {
+    transform: scale(1);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.driver-hint-no-animation .driver-hint-pulse {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-hint-pulse {
+    animation: none;
+  }
+}
+
+/* A tour takes over the screen, so the beacons step aside until it ends. The
+   tour marks the body while it runs, which keeps the two decoupled. */
+.driver-active .driver-hint {
+  display: none;
+}
