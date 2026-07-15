@@ -13,6 +13,9 @@ const fileName = {
 
 const formats = Object.keys(fileName) as Array<keyof typeof fileName>;
 
+// The tour entry. The hints entry is built separately (vite.hints.config.ts)
+// so each bundle stands alone: no shared chunk to load, and importing one
+// never pulls in the other. See that config for the trade-off.
 export default defineConfig({
   base: "./",
   plugins: [

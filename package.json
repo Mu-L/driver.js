@@ -16,6 +16,9 @@
   "bugs": {
     "url": "https://github.com/nilbuild/driver.js/issues"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     ".": {
       "import": {
@@ -27,20 +30,35 @@
         "default": "./dist/driver.js.cjs"
       }
     },
+    "./hints": {
+      "import": {
+        "types": "./dist/hints.d.mts",
+        "default": "./dist/hints.mjs"
+      },
+      "require": {
+        "types": "./dist/hints.d.cts",
+        "default": "./dist/hints.cjs"
+      }
+    },
     "./dist/driver.css": {
       "import": "./dist/driver.css",
       "require": "./dist/driver.css",
       "default": "./dist/driver.css"
+    },
+    "./dist/hints.css": {
+      "import": "./dist/hints.css",
+      "require": "./dist/hints.css",
+      "default": "./dist/hints.css"
     }
   },
   "scripts": {
     "dev": "pnpm --dir playground dev",
     "playground:install": "pnpm --dir playground install",
-    "build": "tsc && vite build && node scripts/postbuild.mjs",
+    "build": "tsc && vite build && vite build --config vite.hints.config.ts && node scripts/postbuild.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint:package": "publint && attw --pack . --exclude-entrypoints ./dist/driver.css",
+    "lint:package": "publint && attw --pack . --exclude-entrypoints ./dist/driver.css ./dist/hints.css",
     "format": "prettier . --write",
     "release": "GITHUB_TOKEN=$(gh auth token) release-it",
     "prepublishOnly": "pnpm build && pnpm lint:package"
@@ -49,6 +67,7 @@
     "!tests/**/*",
     "!docs/**/*",
     "dist/**/*",
+    "hints/package.json",
     "!dist/**/*.js.map"
   ],
   "devDependencies": {

@@ -11,6 +11,10 @@ import { PositionOptions, repositionPopover } from "./position";
 import { resolveElement } from "./utils";
 import "./hints.css";
 
+// Part of the hints API surface: beacon/popover placement and the DOM handed
+// to onPopoverRender are described with the popover primitive's types.
+export type { Alignment, PopoverDOM, Side } from "./popover";
+
 export type HintBeacon = {
   // Which edge of the element the beacon sits on, and where along that edge.
   // Together they give the twelve anchor points of the element's box.
