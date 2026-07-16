@@ -8,13 +8,18 @@ import {
   hidePopover,
 } from "./popover";
 import { generateStageSvgPathString } from "./overlay";
-import { ARROW_CORNER_INSET, ARROW_SIZE, PositionOptions, repositionPopover } from "./position";
+import { ARROW_CORNER_INSET, PositionOptions, repositionPopover } from "./position";
 import { resolveElement } from "./utils";
 import "./hints.css";
 
 // The cutout around the active hint's element, mirroring the tour's defaults.
 const OVERLAY_PADDING = 10;
 const OVERLAY_RADIUS = 5;
+
+// The hint arrow is rendered larger than the tour's (7px borders — see
+// hints.css); the popover shift that puts the arrow tip on the beacon has to
+// assume the same size, since it is computed before the popover exists.
+const HINT_ARROW_SIZE = 14;
 
 // Part of the hints API surface: beacon/popover placement and the DOM handed
 // to onPopoverRender are described with the popover primitive's types.
@@ -310,19 +315,35 @@ export function hints(config: HintsConfig = {}): Hints {
     teardown.push(() => tourObserver.disconnect());
   }
 
+  // With the overlay, the popover anchors to the element like a tour step;
+  // without it, to the beacon.
+  function popoverAnchor(entry: MountedHint): Element {
+    return currentConfig.overlay ? entry.element : entry.beacon;
+  }
+
   function popoverPosition(entry: MountedHint): PositionOptions {
+    const side = entry.hint.popover?.side || "bottom";
+    const align = entry.hint.popover?.align || "start";
+    const offset = currentConfig.popoverOffset ?? 10;
+
+    // Overlay mode reads like a tour step: the popover clears the cutout ring
+    // and lines up with its edge.
+    if (currentConfig.overlay) {
+      return { side, align, offset: OVERLAY_PADDING + offset, padding: OVERLAY_PADDING };
+    }
+
     // The arrow sits a fixed inset from the popover's corner. Shift the
     // popover by the difference between the arrow tip and the beacon's
     // half-size (via `padding`, the alignment pull-back), so for start/end
     // alignments the arrow points at the beacon's center instead of beside it.
     const beaconSize = entry.beacon.getBoundingClientRect().width;
-    const arrowTip = ARROW_CORNER_INSET + ARROW_SIZE / 2;
+    const arrowTip = ARROW_CORNER_INSET + HINT_ARROW_SIZE / 2;
 
     return {
-      side: entry.hint.popover?.side || "bottom",
-      align: entry.hint.popover?.align || "start",
+      side,
+      align,
       // The popover hangs off the beacon, and there is no stage to clear.
-      offset: currentConfig.popoverOffset ?? 10,
+      offset,
       padding: arrowTip - beaconSize / 2,
     };
   }
@@ -408,7 +429,12 @@ export function hints(config: HintsConfig = {}): Hints {
       return;
     }
 
-    find(activeId!)?.beacon.setAttribute("aria-expanded", "false");
+    const entry = find(activeId!);
+    entry?.beacon.setAttribute("aria-expanded", "false");
+    // Bring back a beacon that overlay mode tucked away.
+    if (entry) {
+      entry.beacon.style.display = "";
+    }
 
     destroyPopover(popover);
     popover = undefined;
@@ -429,7 +455,14 @@ export function hints(config: HintsConfig = {}): Hints {
     activeId = entry.id;
     entry.beacon.setAttribute("aria-expanded", "true");
     showOverlay(entry);
-    popover = renderPopover(entry.beacon, popoverOptions(entry));
+
+    // In overlay mode the spotlight does the pointing, so the beacon steps
+    // aside while its popover is up and the popover frames the element.
+    if (currentConfig.overlay) {
+      entry.beacon.style.display = "none";
+    }
+
+    popover = renderPopover(popoverAnchor(entry), popoverOptions(entry));
 
     const onOpen = entry.hint.onOpen || currentConfig.onOpen;
     onOpen?.(entry.element, entry.hint, { config: currentConfig, hints: api });
@@ -491,7 +524,7 @@ export function hints(config: HintsConfig = {}): Hints {
       return;
     }
 
-    repositionPopover(popover, active.beacon, popoverPosition(active));
+    repositionPopover(popover, popoverAnchor(active), popoverPosition(active));
     refreshOverlay(active);
 
     // The beacon is gone from the screen, so the popover has nothing to hang

@@ -269,8 +269,9 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
   popover.wrapper.classList.add(`driver-popover-align-${requiredAlignment}`);
 }
 
-// The arrow is a CSS triangle built from 5px borders, so its bounding box is
-// 10x10 regardless of where it is rendered.
+// The tour arrow is a CSS triangle built from 5px borders, so its bounding
+// box is 10x10. Where the actual arrow can differ (the hint popover renders a
+// larger one), the size is measured from the DOM and this is the fallback.
 export const ARROW_SIZE = 10;
 
 // Keep the arrow this far from the popover's corners so it never collides with
@@ -295,18 +296,19 @@ export function calculateArrowTarget(
   elementEnd: number,
   popoverStart: number,
   popoverEnd: number,
-  alignment: Alignment
+  alignment: Alignment,
+  arrowSize: number = ARROW_SIZE
 ): number {
   const popoverLength = popoverEnd - popoverStart;
   const fullySpansPopover = elementStart <= popoverStart && elementEnd >= popoverEnd;
 
   if (fullySpansPopover) {
     if (alignment === "start") {
-      return ARROW_CORNER_INSET + ARROW_SIZE / 2;
+      return ARROW_CORNER_INSET + arrowSize / 2;
     }
 
     if (alignment === "end") {
-      return popoverLength - ARROW_CORNER_INSET - ARROW_SIZE / 2;
+      return popoverLength - ARROW_CORNER_INSET - arrowSize / 2;
     }
 
     return popoverLength / 2;
@@ -321,16 +323,20 @@ export function calculateArrowTarget(
 // Turns the target point into the inline offset for the arrow box, clamped so
 // the whole arrow stays attached to the popover body and clear of its rounded
 // corners. `popoverLength` is the popover's size along the arrow's edge.
-export function calculateArrowOffset(targetCenter: number, popoverLength: number): number {
+export function calculateArrowOffset(
+  targetCenter: number,
+  popoverLength: number,
+  arrowSize: number = ARROW_SIZE
+): number {
   const minOffset = ARROW_CORNER_INSET;
-  const maxOffset = popoverLength - ARROW_CORNER_INSET - ARROW_SIZE;
+  const maxOffset = popoverLength - ARROW_CORNER_INSET - arrowSize;
 
   // The popover is too small to honor the corner insets; center the arrow.
   if (maxOffset < minOffset) {
-    return Math.max(0, (popoverLength - ARROW_SIZE) / 2);
+    return Math.max(0, (popoverLength - arrowSize) / 2);
   }
 
-  const offset = targetCenter - ARROW_SIZE / 2;
+  const offset = targetCenter - arrowSize / 2;
   return Math.min(Math.max(offset, minOffset), maxOffset);
 }
 
@@ -393,6 +399,10 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Ali
   // direction it points). The offset along that edge is set inline below.
   popoverArrow.classList.add(`driver-popover-arrow-side-${arrowSide}`);
 
+  // The arrow's box is measured rather than assumed, so a stylesheet that
+  // renders a larger arrow (the hint popover does) keeps the tip on target.
+  const arrowSize = popoverArrow.getBoundingClientRect().width || ARROW_SIZE;
+
   // Arrow sides left/right sit on vertical edges (positioned by `top`); top and
   // bottom sit on horizontal edges (positioned by `left`).
   if (arrowSide === "left" || arrowSide === "right") {
@@ -401,17 +411,19 @@ function renderPopoverArrow(popover: PopoverDOM, side: Placement, alignment: Ali
       elementRect.bottom,
       popoverRect.top,
       popoverRect.bottom,
-      alignment
+      alignment,
+      arrowSize
     );
-    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height)}px`;
+    popoverArrow.style.top = `${calculateArrowOffset(target, popoverRect.height, arrowSize)}px`;
   } else {
     const target = calculateArrowTarget(
       elementRect.left,
       elementRect.right,
       popoverRect.left,
       popoverRect.right,
-      alignment
+      alignment,
+      arrowSize
     );
-    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width)}px`;
+    popoverArrow.style.left = `${calculateArrowOffset(target, popoverRect.width, arrowSize)}px`;
   }
 }

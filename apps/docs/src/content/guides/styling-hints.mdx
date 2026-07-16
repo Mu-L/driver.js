@@ -146,10 +146,10 @@ const productHints = hints({
 
 ## Dimming the page
 
-With `overlay: true` the page dims while a hint is open — a focus mode for
-hints. The hint's element is cut out of the dim and stays interactive, exactly
-like a tour step's highlight; the other beacons wait under the overlay.
-Clicking the dimmed page closes the hint.
+With `overlay: true` an open hint reads exactly like a tour step: the element
+is spotlighted and stays interactive, the popover frames the element (the
+beacon steps aside while it is up), and the other beacons wait under the
+overlay. Clicking the dimmed page closes the hint.
 
 <HintsSample
   idPrefix="overlay"

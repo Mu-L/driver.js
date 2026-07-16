@@ -75,6 +75,14 @@
   }
 }
 
+/* A larger arrow than the tour's 5px triangle, proportionate to the beacon.
+   The placement code measures the arrow, so the size only lives here — if you
+   restyle it, alignment follows. Kept in sync with HINT_ARROW_SIZE in
+   hints.ts, which shifts the popover so the tip lands on the beacon. */
+.driver-hint-popover .driver-popover-arrow {
+  border-width: 7px;
+}
+
 /* The opt-in overlay shown while a hint is open: a full-screen dim with the
    hint's element cut out. Only the open hint's beacon and popover sit above
    it. The svg itself lets pointer events through (the element in the cutout

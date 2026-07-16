@@ -264,15 +264,15 @@ describe("popover arrow alignment", () => {
     const productHints = createHints({ hints: SAMPLE_HINTS });
     productHints.show();
 
-    // The arrow tip sits 20px from the popover's corner (15px inset + half of
-    // the 10px arrow). For a 24px beacon the popover must therefore start
-    // 20 - 12 = 8px before the beacon's left edge.
+    // The arrow tip sits 22px from the popover's corner (15px inset + half of
+    // the 14px hint arrow). For a 24px beacon the popover must therefore start
+    // 22 - 12 = 10px before the beacon's left edge.
     const beacon = beaconFor("intro");
     beacon.getBoundingClientRect = () => rect({ top: 400, left: 400, right: 424, bottom: 424, width: 24, height: 24 });
 
     productHints.open("intro");
 
-    expect(popoverEl()?.style.left).toBe("392px");
+    expect(popoverEl()?.style.left).toBe("390px");
   });
 });
 
@@ -389,6 +389,41 @@ describe("overlay", () => {
     productHints.hide();
 
     expect(overlayEl()).toBeNull();
+  });
+
+  it("hides the beacon while its popover is open, and restores it on close", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+
+    productHints.open("intro");
+    expect(beaconFor("intro").style.display).toBe("none");
+
+    productHints.close();
+    expect(beaconFor("intro").style.display).toBe("");
+  });
+
+  it("keeps the beacon visible when the overlay is disabled", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS });
+    productHints.show();
+
+    productHints.open("intro");
+
+    expect(beaconFor("intro").style.display).not.toBe("none");
+  });
+
+  it("anchors the popover to the element instead of the beacon", () => {
+    const rect = (over: Partial<DOMRect>): DOMRect =>
+      ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...over }) as DOMRect;
+    const el = document.querySelector<HTMLElement>("#intro")!;
+    el.getBoundingClientRect = () => rect({ top: 300, left: 400, right: 600, bottom: 340, width: 200, height: 40 });
+
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    // Tour-step alignment: the popover's left lines up with the cutout's edge,
+    // element left minus the 10px overlay padding.
+    expect(popoverEl()?.style.left).toBe("390px");
   });
 });
 
