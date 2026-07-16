@@ -22,10 +22,12 @@ import "driver.js/dist/hints.css";
 ```
 
 Each hint points at an element and describes it with the same popover you know
-from tours:
+from tours. The demo below also turns on the optional overlay, which
+spotlights the element while its hint is open:
 
 <HintsSample
   buttonText="Show Hints"
+  config={{ overlay: true, overlayOpacity: 0.5 }}
   hints={[
     {
       element: "#hint-demo-export",
@@ -53,6 +55,8 @@ Here is the code for the example above:
 
 ```js
 const productHints = hints({
+  overlay: true,
+  overlayOpacity: 0.5,
   hints: [
     {
       element: "#export-btn",
