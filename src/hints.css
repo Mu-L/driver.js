@@ -26,7 +26,9 @@
 .driver-hint-pulse {
   position: absolute;
   border-radius: 50%;
-  background-color: var(--driver-hint-color, #2d2d2d);
+  /* Indigo by default so the beacon reads on both light and dark pages;
+     override with --driver-hint-color. */
+  background-color: var(--driver-hint-color, #4f46e5);
 }
 
 .driver-hint-dot {
