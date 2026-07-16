@@ -67,7 +67,7 @@ export function HintsSample(props: HintsSampleProps) {
           </span>
         </div>
         <p id={`${idPrefix}-summary`} className="m-0 text-sm text-gray-600">
-          Revenue is up 12% quarter over quarter. Click the beacons to explore what changed — the page stays fully
+          Revenue is up 12% quarter over quarter. Click the beacons to explore what changed. The page stays fully
           interactive while they are shown.
         </p>
       </div>

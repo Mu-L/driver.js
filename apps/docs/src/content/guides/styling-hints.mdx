@@ -1,6 +1,6 @@
 ---
 title: "Styling Hints"
-description: "Customize Driver.js hint beacons and their popovers — colors, sizes, animation, button text, and fully themed popovers."
+description: "Customize Driver.js hint beacons and their popovers: colors, sizes, animation, button text, and fully themed popovers."
 groupTitle: "Examples"
 sort: 6
 ---
@@ -11,9 +11,50 @@ Everything about a hint can be customized: the beacon's color, size and
 animation through CSS variables, and the popover through the same theming that
 tours use. If you haven't read the [Hints guide](/docs/hints) yet, start there.
 
+## Dimming the page
+
+With `overlay: true` an open hint reads exactly like a tour step: the element
+is spotlighted and stays interactive, the popover frames the element (the
+beacon steps aside while it is up), and the other beacons wait under the
+overlay. Clicking the dimmed page closes the hint.
+
+<HintsSample
+  idPrefix="overlay"
+  config={{ overlay: true, overlayOpacity: 0.5 }}
+  hints={[
+    {
+      element: "#overlay-export",
+      id: "export",
+      popover: {
+        title: "Focus mode",
+        description: "The Export button is spotlighted and still clickable; the rest of the page is dimmed.",
+      },
+    },
+    {
+      element: "#overlay-summary",
+      id: "summary",
+      beacon: { side: "left", align: "center" },
+      popover: {
+        title: "One at a time",
+        description: "The other beacons wait under the dim. Close this hint to get back to them.",
+        side: "bottom",
+      },
+    },
+  ]}
+  client:load
+/>
+
+```js
+const productHints = hints({
+  overlay: true,
+  overlayOpacity: 0.5,
+  hints: [...],
+});
+```
+
 ## Beacon color and size
 
-Beacons read two CSS variables — set them globally on `.driver-hint`, or give
+Beacons read two CSS variables. Set them globally on `.driver-hint`, or give
 individual beacons a `className` and scope the variables to it:
 
 <HintsSample
@@ -69,7 +110,7 @@ const productHints = hints({
 
 ## Static beacons
 
-Set `animate: false` on a hint — or on the instance-level `beacon` defaults —
+Set `animate: false` on a hint (or on the instance-level `beacon` defaults)
 for a still dot without the pulse. Users who prefer reduced motion get the
 still dot automatically.
 
@@ -144,51 +185,10 @@ const productHints = hints({
 });
 ```
 
-## Dimming the page
-
-With `overlay: true` an open hint reads exactly like a tour step: the element
-is spotlighted and stays interactive, the popover frames the element (the
-beacon steps aside while it is up), and the other beacons wait under the
-overlay. Clicking the dimmed page closes the hint.
-
-<HintsSample
-  idPrefix="overlay"
-  config={{ overlay: true, overlayOpacity: 0.5 }}
-  hints={[
-    {
-      element: "#overlay-export",
-      id: "export",
-      popover: {
-        title: "Focus mode",
-        description: "The Export button is spotlighted and still clickable; the rest of the page is dimmed.",
-      },
-    },
-    {
-      element: "#overlay-summary",
-      id: "summary",
-      beacon: { side: "left", align: "center" },
-      popover: {
-        title: "One at a time",
-        description: "The other beacons wait under the dim. Close this hint to get back to them.",
-        side: "bottom",
-      },
-    },
-  ]}
-  client:load
-/>
-
-```js
-const productHints = hints({
-  overlay: true,
-  overlayOpacity: 0.5,
-  hints: [...],
-});
-```
-
 ## Theming the popover
 
 Hint popovers are regular Driver.js popovers, so `popoverClass` and the
-[popover styling](/docs/styling-popover) techniques apply unchanged — here with
+[popover styling](/docs/styling-popover) techniques apply unchanged, shown here with
 the same theme used across these docs:
 
 <HintsSample

@@ -1,6 +1,6 @@
 ---
 title: "Hints"
-description: "Add pulsing hint beacons to your UI with Driver.js. Users click a beacon to open a popover explaining the feature — no tour, no overlay, and the page stays fully interactive."
+description: "Add pulsing hint beacons to your UI with Driver.js. Users click a beacon to open a popover explaining the feature. No tour, no overlay, and the page stays fully interactive."
 groupTitle: "Introduction"
 sort: 6
 ---
@@ -10,10 +10,10 @@ import { HintsSample } from "../../components/HintsSample.tsx";
 Tours walk users through your product step by step. Hints do the opposite: they
 sit quietly on the page as pulsing beacons, and the user decides which ones to
 open, in any order, whenever they want. There is no overlay and nothing is
-blocked — the page stays fully interactive.
+blocked. The page stays fully interactive.
 
 Hints ship as their own entry, so tour-only users never load them. Import the
-module and its stylesheet — the stylesheet is self-contained, so you don't need
+module and its stylesheet. The stylesheet is self-contained, so you don't need
 `driver.css` unless you also use tours:
 
 ```js
@@ -82,9 +82,9 @@ productHints.show();
 
 The two are deliberately different:
 
-- Closing — clicking the beacon again, clicking anywhere outside, or pressing
+- Closing: clicking the beacon again, clicking anywhere outside, or pressing
   <kbd>Escape</kbd> closes the popover. The beacon stays, and the hint can be opened again.
-- Dismissing — clicking the _Got it_ button removes the beacon entirely and
+- Dismissing: clicking the _Got it_ button removes the beacon entirely and
   fires `onDismiss`. The hint is gone for the session.
 
 Only one hint popover is open at a time; opening another swaps it.
@@ -92,7 +92,7 @@ Only one hint popover is open at a time; opening another swaps it.
 ## Remembering dismissals
 
 Driver.js keeps dismissals in memory for the session and stays out of the
-storage business — `onDismiss` with stable `id`s is the hook, storage is yours:
+storage business. `onDismiss` with stable `id`s is the hook, and storage is yours:
 
 ```js
 const dismissed = new Set(JSON.parse(localStorage.getItem("hints") ?? "[]"));
@@ -110,7 +110,7 @@ productHints.show();
 
 ## Beacon placement and styling
 
-A beacon sits on one of twelve anchor points of its element's box — a `side`
+A beacon sits on one of twelve anchor points of its element's box: a `side`
 (`top`, `right`, `bottom`, `left`) plus an `align` (`start`, `center`, `end`).
 The default is the top-right corner. Set `animate: false` for a static dot;
 the pulse also pauses automatically for users who prefer reduced motion.
@@ -126,7 +126,7 @@ Size and colour come from CSS variables:
 
 ## Dimming the page
 
-Pass `overlay: true` to dim the page while a hint is open — the hint reads
+Pass `overlay: true` to dim the page while a hint is open. The hint reads
 exactly like a tour step: the element is cut out of the dim and stays
 interactive, the popover anchors to the element rather than the beacon, and
 the beacon itself steps aside while its popover is up. Everything else,
@@ -147,7 +147,7 @@ const productHints = hints({
 Hints and tours coexist without any wiring: while a tour is running, the
 beacons hide and any open hint closes; when the tour ends, the beacons return
 on their own. Since hint popovers are regular Driver.js popovers, hooks like
-`onPopoverRender` work too — a common pattern is a hint that launches the tour:
+`onPopoverRender` work too. A common pattern is a hint that launches the tour:
 
 ```js
 const tour = driver({ steps: [...] });
