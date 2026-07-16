@@ -8,12 +8,14 @@ import { durationGroup } from "./duration";
 import { scrollGroup } from "./scroll";
 import { instancesGroup } from "./instances";
 import { skipMissingGroup } from "./skip-missing";
+import { hintsGroup } from "./hints";
 
 export const exampleGroups: ExampleGroup[] = [
   highlightGroup,
   popoverGroup,
   arrowGroup,
   tourGroup,
+  hintsGroup,
   skipMissingGroup,
   instancesGroup,
   durationGroup,
