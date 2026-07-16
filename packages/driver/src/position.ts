@@ -271,11 +271,11 @@ export function repositionPopover(popover: PopoverDOM, anchor: Element, options:
 
 // The arrow is a CSS triangle built from 5px borders, so its bounding box is
 // 10x10 regardless of where it is rendered.
-const ARROW_SIZE = 10;
+export const ARROW_SIZE = 10;
 
 // Keep the arrow this far from the popover's corners so it never collides with
 // the rounded corners.
-const ARROW_CORNER_INSET = 15;
+export const ARROW_CORNER_INSET = 15;
 
 // Finds the point the arrow should aim at along one axis, returned relative to
 // the popover's leading edge (`popoverStart`). All inputs are viewport coords.

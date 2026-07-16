@@ -7,7 +7,7 @@ import {
   Side,
   hidePopover,
 } from "./popover";
-import { PositionOptions, repositionPopover } from "./position";
+import { ARROW_CORNER_INSET, ARROW_SIZE, PositionOptions, repositionPopover } from "./position";
 import { resolveElement } from "./utils";
 import "./hints.css";
 
@@ -66,6 +66,13 @@ export type HintsConfig = {
   popoverClass?: string;
   popoverOffset?: number;
 
+  // Dim the page while a hint is open. The beacons and the popover stay above
+  // the overlay so other hints remain clickable; clicking the dimmed page
+  // closes the open hint like any outside click.
+  overlay?: boolean;
+  overlayColor?: string;
+  overlayOpacity?: number;
+
   onOpen?: HintHook;
   onDismiss?: HintHook;
 };
@@ -100,6 +107,7 @@ export function hints(config: HintsConfig = {}): Hints {
 
   let activeId: string | undefined;
   let popover: PopoverDOM | undefined;
+  let overlay: HTMLElement | undefined;
   let refreshTimeout: number | undefined;
   let isVisible = false;
 
@@ -298,13 +306,37 @@ export function hints(config: HintsConfig = {}): Hints {
   }
 
   function popoverPosition(entry: MountedHint): PositionOptions {
+    // The arrow sits a fixed inset from the popover's corner. Shift the
+    // popover by the difference between the arrow tip and the beacon's
+    // half-size (via `padding`, the alignment pull-back), so for start/end
+    // alignments the arrow points at the beacon's center instead of beside it.
+    const beaconSize = entry.beacon.getBoundingClientRect().width;
+    const arrowTip = ARROW_CORNER_INSET + ARROW_SIZE / 2;
+
     return {
       side: entry.hint.popover?.side || "bottom",
       align: entry.hint.popover?.align || "start",
       // The popover hangs off the beacon, and there is no stage to clear.
       offset: currentConfig.popoverOffset ?? 10,
-      padding: 0,
+      padding: arrowTip - beaconSize / 2,
     };
+  }
+
+  function showOverlay() {
+    if (!currentConfig.overlay || overlay) {
+      return;
+    }
+
+    overlay = document.createElement("div");
+    overlay.className = "driver-hint-overlay";
+    overlay.style.backgroundColor = currentConfig.overlayColor || "#000";
+    overlay.style.opacity = `${currentConfig.overlayOpacity ?? 0.7}`;
+    document.body.appendChild(overlay);
+  }
+
+  function removeOverlay() {
+    overlay?.remove();
+    overlay = undefined;
   }
 
   function popoverOptions(entry: MountedHint): PopoverRenderOptions {
@@ -343,6 +375,8 @@ export function hints(config: HintsConfig = {}): Hints {
     destroyPopover(popover);
     popover = undefined;
     activeId = undefined;
+
+    removeOverlay();
   }
 
   function open(id: string | number) {
@@ -356,6 +390,7 @@ export function hints(config: HintsConfig = {}): Hints {
 
     activeId = entry.id;
     entry.beacon.setAttribute("aria-expanded", "true");
+    showOverlay();
     popover = renderPopover(entry.beacon, popoverOptions(entry));
 
     const onOpen = entry.hint.onOpen || currentConfig.onOpen;

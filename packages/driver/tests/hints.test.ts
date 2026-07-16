@@ -175,15 +175,42 @@ describe("beacon positioning", () => {
   });
 
   it.each([
-    [{ side: "top", align: "start" }, { top: "400px", left: "400px" }],
-    [{ side: "top", align: "center" }, { top: "400px", left: "500px" }],
-    [{ side: "top", align: "end" }, { top: "400px", left: "600px" }],
-    [{ side: "bottom", align: "start" }, { top: "420px", left: "400px" }],
-    [{ side: "bottom", align: "center" }, { top: "420px", left: "500px" }],
-    [{ side: "left", align: "start" }, { top: "400px", left: "400px" }],
-    [{ side: "left", align: "center" }, { top: "410px", left: "400px" }],
-    [{ side: "left", align: "end" }, { top: "420px", left: "400px" }],
-    [{ side: "right", align: "center" }, { top: "410px", left: "600px" }],
+    [
+      { side: "top", align: "start" },
+      { top: "400px", left: "400px" },
+    ],
+    [
+      { side: "top", align: "center" },
+      { top: "400px", left: "500px" },
+    ],
+    [
+      { side: "top", align: "end" },
+      { top: "400px", left: "600px" },
+    ],
+    [
+      { side: "bottom", align: "start" },
+      { top: "420px", left: "400px" },
+    ],
+    [
+      { side: "bottom", align: "center" },
+      { top: "420px", left: "500px" },
+    ],
+    [
+      { side: "left", align: "start" },
+      { top: "400px", left: "400px" },
+    ],
+    [
+      { side: "left", align: "center" },
+      { top: "410px", left: "400px" },
+    ],
+    [
+      { side: "left", align: "end" },
+      { top: "420px", left: "400px" },
+    ],
+    [
+      { side: "right", align: "center" },
+      { top: "410px", left: "600px" },
+    ],
   ] as const)("anchors the beacon for %o", (beacon, expected) => {
     expect(positionFor(beacon)).toEqual(expected);
   });
@@ -226,6 +253,106 @@ describe("beacon positioning", () => {
     await nextFrame();
 
     expect(beacons()[0].style.left).toBe("250px");
+  });
+});
+
+describe("popover arrow alignment", () => {
+  const rect = (over: Partial<DOMRect>): DOMRect =>
+    ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...over }) as DOMRect;
+
+  it("shifts the popover so the arrow points at the beacon's center", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS });
+    productHints.show();
+
+    // The arrow tip sits 20px from the popover's corner (15px inset + half of
+    // the 10px arrow). For a 24px beacon the popover must therefore start
+    // 20 - 12 = 8px before the beacon's left edge.
+    const beacon = beaconFor("intro");
+    beacon.getBoundingClientRect = () => rect({ top: 400, left: 400, right: 424, bottom: 424, width: 24, height: 24 });
+
+    productHints.open("intro");
+
+    expect(popoverEl()?.style.left).toBe("392px");
+  });
+});
+
+describe("overlay", () => {
+  const overlayEl = () => document.querySelector<HTMLElement>(".driver-hint-overlay");
+
+  it("shows no overlay by default", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS });
+    productHints.show();
+    productHints.open("intro");
+
+    expect(overlayEl()).toBeNull();
+  });
+
+  it("dims the page while a hint is open when enabled", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+
+    expect(overlayEl()).toBeNull();
+
+    productHints.open("intro");
+    expect(overlayEl()).not.toBeNull();
+
+    productHints.close();
+    expect(overlayEl()).toBeNull();
+  });
+
+  it("keeps a single overlay when swapping between hints", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+
+    productHints.open("intro");
+    productHints.open("card");
+
+    expect(document.querySelectorAll(".driver-hint-overlay")).toHaveLength(1);
+  });
+
+  it("applies the configured color and opacity", () => {
+    const productHints = createHints({
+      hints: SAMPLE_HINTS,
+      overlay: true,
+      overlayColor: "#123456",
+      overlayOpacity: 0.4,
+    });
+    productHints.show();
+    productHints.open("intro");
+
+    expect(overlayEl()?.style.backgroundColor).toBe("rgb(18, 52, 86)");
+    expect(overlayEl()?.style.opacity).toBe("0.4");
+  });
+
+  it("closes the hint when the dimmed page is clicked", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    overlayEl()!.click();
+
+    expect(popoverEl()).toBeNull();
+    expect(overlayEl()).toBeNull();
+  });
+
+  it("removes the overlay when the open hint is dismissed", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    productHints.dismiss("intro");
+
+    expect(overlayEl()).toBeNull();
+  });
+
+  it("removes the overlay on hide()", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    productHints.hide();
+
+    expect(overlayEl()).toBeNull();
   });
 });
 

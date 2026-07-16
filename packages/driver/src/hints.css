@@ -9,8 +9,8 @@
   box-sizing: border-box;
   position: fixed;
   display: block;
-  width: var(--driver-hint-size, 20px);
-  height: var(--driver-hint-size, 20px);
+  width: var(--driver-hint-size, 24px);
+  height: var(--driver-hint-size, 24px);
   cursor: pointer;
   /* Below the popover, above the page. */
   z-index: 999999998;
@@ -26,9 +26,9 @@
 .driver-hint-pulse {
   position: absolute;
   border-radius: 50%;
-  /* Indigo by default so the beacon reads on both light and dark pages;
-     override with --driver-hint-color. */
-  background-color: var(--driver-hint-color, #4f46e5);
+  /* A light indigo by default — noticeable without shouting, and it reads on
+     both light and dark pages; override with --driver-hint-color. */
+  background-color: var(--driver-hint-color, #818cf8);
 }
 
 .driver-hint-dot {
@@ -65,6 +65,35 @@
 
 @media (prefers-reduced-motion: reduce) {
   .driver-hint-pulse {
+    animation: none;
+  }
+}
+
+/* The popover arrow is a white triangle that normally sits against a tour's
+   darkened overlay. Hints usually have no overlay, so on a light page it
+   would vanish and the popover would look detached from its beacon — a faint
+   halo keeps it visible on any background. */
+.driver-hint-popover .driver-popover-arrow {
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.25)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* The opt-in overlay shown while a hint is open. Beacons and the popover sit
+   above it, so hints stay clickable while the page behind is dimmed. */
+.driver-hint-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999997;
+  animation: driver-hint-overlay-fade 200ms ease-out;
+}
+
+@keyframes driver-hint-overlay-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-hint-overlay {
     animation: none;
   }
 }
