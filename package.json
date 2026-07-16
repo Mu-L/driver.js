@@ -54,7 +54,7 @@
   "scripts": {
     "dev": "pnpm --dir playground dev",
     "playground:install": "pnpm --dir playground install",
-    "build": "tsc && vite build && vite build --config vite.hints.config.ts && node scripts/postbuild.mjs",
+    "build": "tsc && tsdown && node scripts/postbuild.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -72,8 +72,8 @@
   ],
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
-    "@microsoft/api-extractor": "^7.58.9",
     "@release-it/keep-a-changelog": "^7.1.0",
+    "@tsdown/css": "^0.22.8",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "^4.1.9",
@@ -83,10 +83,8 @@
     "prettier": "^3.8.4",
     "publint": "^0.3.21",
     "release-it": "^20.2.0",
-    "terser": "^5.48.0",
+    "tsdown": "^0.22.8",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vite-plugin-dts": "^5.0.2",
     "vitest": "^4.1.9"
   },
   "keywords": [
