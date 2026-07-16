@@ -296,6 +296,21 @@ describe("popover state exposure", () => {
     expect(popover?.title.textContent).toBe("Intro");
   });
 
+  it("exposes the rendered popover through state inside onPopoverRender", () => {
+    // The hook receives the popover as its first argument, but opts.state
+    // must agree with it — code in the wild reads opts.state.popover too.
+    let stateMatchesArg: boolean | undefined;
+    const d = createDriver({
+      animate: false,
+      onPopoverRender: (popover, opts) => {
+        stateMatchesArg = opts.state.popover === popover;
+      },
+    });
+    d.highlight({ element: "#intro", popover: { title: "Intro" } });
+
+    expect(stateMatchesArg).toBe(true);
+  });
+
   it("clears the popover from state on destroy", () => {
     const d = createDriver({ animate: false });
     d.highlight({ element: "#intro", popover: { title: "Intro" } });

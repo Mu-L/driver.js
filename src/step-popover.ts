@@ -87,6 +87,10 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     },
 
     onRender: popoverDom => {
+      // Commit the popover to state before the user hook runs — the hook's
+      // opts.state.popover has always pointed at the freshly rendered popover.
+      ctx.setState("popover", popoverDom);
+
       const onPopoverRender = popover.onPopoverRender || ctx.getConfig("onPopoverRender");
       onPopoverRender?.(popoverDom, ctx.getHookOpts());
     },
@@ -98,9 +102,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
 export function renderStepPopover(ctx: Context, element: Element, step: DriveStep) {
   destroyPopover(ctx.getState("popover"));
 
-  const popover = renderPopover(element, resolveStepPopover(ctx, element, step));
-
-  ctx.setState("popover", popover);
+  renderPopover(element, resolveStepPopover(ctx, element, step));
 }
 
 export function repositionStepPopover(ctx: Context, element: Element, step: DriveStep) {
