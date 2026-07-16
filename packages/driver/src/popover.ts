@@ -53,7 +53,7 @@ export type PopoverDOM = {
 };
 
 // Everything the primitive needs to render a popover, fully resolved by the
-// caller — no config or state fallbacks happen at this level.
+// caller; no config or state fallbacks happen at this level.
 export type PopoverRenderOptions = {
   title?: string;
   description?: string;

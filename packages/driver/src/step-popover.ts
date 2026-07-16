@@ -87,7 +87,7 @@ function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): Po
     },
 
     onRender: popoverDom => {
-      // Commit the popover to state before the user hook runs — the hook's
+      // Commit the popover to state before the user hook runs; the hook's
       // opts.state.popover has always pointed at the freshly rendered popover.
       ctx.setState("popover", popoverDom);
 

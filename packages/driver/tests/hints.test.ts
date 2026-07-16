@@ -107,17 +107,16 @@ describe("mounting beacons", () => {
   });
 
   it("picks up an element that appears later on show()", () => {
-    const productHints = createHints({ hints: [{ element: "#late" }] });
+    const productHints = createHints({ hints: [{ element: "#late" }, ...SAMPLE_HINTS] });
     productHints.show();
-    expect(beacons()).toHaveLength(0);
+    expect(beacons()).toHaveLength(2);
 
     const late = document.createElement("div");
     late.id = "late";
     document.body.appendChild(late);
-    productHints.hide();
     productHints.show();
 
-    expect(beacons()).toHaveLength(1);
+    expect(beacons()).toHaveLength(3);
   });
 
   it("resolves an element node and a function element", () => {

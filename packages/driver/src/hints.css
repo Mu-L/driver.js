@@ -1,7 +1,5 @@
-/* The hint popover shares its styling with the tour, so this entry pulls in
-   the same popover stylesheet the tour uses. Importing hints.css is therefore
-   all a hints-only consumer needs — no separate popover styles to remember.
-   Everything below is beacon-specific. */
+/* Popover styles are shared with the tour; importing hints.css alone is
+   enough for hints-only consumers. Everything below is hint-specific. */
 @import "./popover.css";
 
 .driver-hint {
@@ -12,10 +10,9 @@
   width: var(--driver-hint-size, 24px);
   height: var(--driver-hint-size, 24px);
   cursor: pointer;
-  /* Above the page but below the overlay, so when a hint is open with the
-     overlay enabled, the other beacons dim with the rest of the page. */
+  /* Below the overlay, so other beacons dim with the page while a hint is open. */
   z-index: 999999996;
-  /* The beacon is centered on the anchor point set inline by the script. */
+  /* Centered on the anchor point that the script sets inline. */
   transform: translate(-50%, -50%);
 }
 
@@ -32,13 +29,10 @@
 .driver-hint-pulse {
   position: absolute;
   border-radius: 50%;
-  /* A light indigo by default — noticeable without shouting, and it reads on
-     both light and dark pages; override with --driver-hint-color. */
   background-color: var(--driver-hint-color, #818cf8);
 }
 
 .driver-hint-dot {
-  /* The solid core, half the size of the beacon box. */
   inset: 25%;
 }
 
@@ -75,28 +69,24 @@
   }
 }
 
-/* A larger arrow than the tour's 5px triangle, proportionate to the beacon.
-   The placement code measures the arrow, so the size only lives here — if you
-   restyle it, alignment follows. Kept in sync with HINT_ARROW_SIZE in
-   hints.ts, which shifts the popover so the tip lands on the beacon. */
+/* A larger arrow than the tour's, proportionate to the beacon. Placement
+   measures the arrow, so restyling it keeps the tip on target; only the
+   beacon shift assumes the size (HINT_ARROW_SIZE in hints.ts). */
 .driver-hint-popover .driver-popover-arrow {
   border-width: 7px;
 }
 
-/* box-shadow stops at the popover's box, which leaves the protruding arrow
-   flat and shadow-less. A drop-shadow filter follows the rendered silhouette
-   instead, so the popover and its arrow cast one seamless shadow, whatever
-   the theme's colors are. */
+/* box-shadow stops at the popover's box, leaving the protruding arrow flat.
+   A drop-shadow filter follows the rendered silhouette instead, so the box
+   and the arrow cast one seamless shadow in any theme. */
 .driver-hint-popover.driver-popover {
   box-shadow: none;
   filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
 }
 
-/* The opt-in overlay shown while a hint is open: a full-screen dim with the
-   hint's element cut out. Only the open hint's beacon and popover sit above
-   it. The svg itself lets pointer events through (the element in the cutout
-   stays interactive); the dimmed path catches them, so clicking the dim
-   closes the hint. */
+/* The opt-in dim with the hint's element cut out. The svg lets pointer events
+   through (the cutout stays interactive); the dimmed path catches them, and
+   clicking it closes the hint. */
 .driver-hint-overlay {
   position: fixed;
   inset: 0;
@@ -119,8 +109,7 @@
   }
 }
 
-/* A tour takes over the screen, so the beacons step aside until it ends. The
-   tour marks the body while it runs, which keeps the two decoupled. */
+/* The tour marks the body while it runs; beacons step aside until it ends. */
 .driver-active .driver-hint {
   display: none;
 }

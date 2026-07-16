@@ -150,7 +150,7 @@ function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
   return svg;
 }
 
-// The full-screen dim with a rounded cutout, as a single evenodd path. Pure —
+// The full-screen dim with a rounded cutout, as a single evenodd path. Pure:
 // the tour passes its stagePadding/stageRadius, the hints overlay its own.
 export function generateStageSvgPathString(stage: StageDefinition, options: { padding: number; radius: number }) {
   const windowX = window.innerWidth;

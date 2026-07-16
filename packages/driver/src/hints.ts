@@ -16,13 +16,11 @@ import "./hints.css";
 const OVERLAY_PADDING = 10;
 const OVERLAY_RADIUS = 5;
 
-// The hint arrow is rendered larger than the tour's (7px borders — see
-// hints.css); the popover shift that puts the arrow tip on the beacon has to
-// assume the same size, since it is computed before the popover exists.
+// Must match the arrow's border-width in hints.css; the popover shift that
+// puts the arrow tip on the beacon runs before the popover exists, so the
+// size cannot be measured.
 const HINT_ARROW_SIZE = 14;
 
-// Part of the hints API surface: beacon/popover placement and the DOM handed
-// to onPopoverRender are described with the popover primitive's types.
 export type { Alignment, PopoverDOM, Side } from "./popover";
 
 export type HintBeacon = {
@@ -76,9 +74,10 @@ export type HintsConfig = {
   popoverClass?: string;
   popoverOffset?: number;
 
-  // Dim the page while a hint is open. The beacons and the popover stay above
-  // the overlay so other hints remain clickable; clicking the dimmed page
-  // closes the open hint like any outside click.
+  // Dim the page while a hint is open, with the hint's element cut out like a
+  // tour step. The popover then anchors to the element, the open hint's beacon
+  // steps aside, and the other beacons wait under the dim; clicking the dimmed
+  // page closes the hint.
   overlay?: boolean;
   overlayColor?: string;
   overlayOpacity?: number;
@@ -110,9 +109,9 @@ type MountedHint = {
 };
 
 export function hints(config: HintsConfig = {}): Hints {
-  let currentConfig: HintsConfig = { ...config };
+  const currentConfig: HintsConfig = { ...config };
+  const dismissed = new Set<string>();
   let mounted: MountedHint[] = [];
-  let dismissed = new Set<string>();
   let teardown: (() => void)[] = [];
 
   let activeId: string | undefined;
@@ -205,10 +204,10 @@ export function hints(config: HintsConfig = {}): Hints {
   }
 
   function mountHint(hint: DriverHint, id: string) {
-    const element = resolveElement(hint.element);
     // A hint without an anchor has nothing to point at. It is skipped rather
     // than centered like a tour's element-less popover, and picked up on the
-    // next show()/refresh() if the element appears later.
+    // next show() if the element appears later.
+    const element = resolveElement(hint.element);
     if (!element) {
       return;
     }
@@ -226,7 +225,7 @@ export function hints(config: HintsConfig = {}): Hints {
   function mountHints() {
     (currentConfig.hints || []).forEach((hint, index) => {
       const id = hintId(hint, index);
-      if (dismissed.has(id)) {
+      if (dismissed.has(id) || find(id)) {
         return;
       }
 
@@ -252,9 +251,6 @@ export function hints(config: HintsConfig = {}): Hints {
   }
 
   function bindListeners() {
-    const onScroll = () => requireRefresh();
-    const onResize = () => requireRefresh();
-
     const onDocumentClick = (event: MouseEvent) => {
       if (!activeId) {
         return;
@@ -275,22 +271,22 @@ export function hints(config: HintsConfig = {}): Hints {
         return;
       }
 
+      // Escape came from the keyboard, so send focus back where it started.
       const beacon = find(activeId)?.beacon;
       close();
-      // Escape came from the keyboard, so send focus back where it started.
       beacon?.focus();
     };
 
     // Capture, so scrolling inside a nested container repositions the beacons
-    // too — those events never reach the window during the bubble phase.
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onResize);
+    // too; those events never reach the window during the bubble phase.
+    window.addEventListener("scroll", requireRefresh, true);
+    window.addEventListener("resize", requireRefresh);
     document.addEventListener("click", onDocumentClick);
     window.addEventListener("keyup", onKeyup);
 
     teardown = [
-      () => window.removeEventListener("scroll", onScroll, true),
-      () => window.removeEventListener("resize", onResize),
+      () => window.removeEventListener("scroll", requireRefresh, true),
+      () => window.removeEventListener("resize", requireRefresh),
       () => document.removeEventListener("click", onDocumentClick),
       () => window.removeEventListener("keyup", onKeyup),
     ];
@@ -424,15 +420,15 @@ export function hints(config: HintsConfig = {}): Hints {
     };
   }
 
-  function closePopover() {
+  function close() {
     if (!popover) {
       return;
     }
 
     const entry = find(activeId!);
-    entry?.beacon.setAttribute("aria-expanded", "false");
-    // Bring back a beacon that overlay mode tucked away.
     if (entry) {
+      entry.beacon.setAttribute("aria-expanded", "false");
+      // Bring back a beacon that overlay mode tucked away.
       entry.beacon.style.display = "";
     }
 
@@ -450,7 +446,7 @@ export function hints(config: HintsConfig = {}): Hints {
     }
 
     // Only one hint is open at a time; opening another swaps it out.
-    closePopover();
+    close();
 
     activeId = entry.id;
     entry.beacon.setAttribute("aria-expanded", "true");
@@ -466,10 +462,6 @@ export function hints(config: HintsConfig = {}): Hints {
 
     const onOpen = entry.hint.onOpen || currentConfig.onOpen;
     onOpen?.(entry.element, entry.hint, { config: currentConfig, hints: api });
-  }
-
-  function close() {
-    closePopover();
   }
 
   function toggle(id: string | number) {
@@ -488,7 +480,7 @@ export function hints(config: HintsConfig = {}): Hints {
     }
 
     if (activeId === entry.id) {
-      closePopover();
+      close();
     }
 
     dismissed.add(entry.id);
@@ -535,15 +527,15 @@ export function hints(config: HintsConfig = {}): Hints {
   }
 
   function show() {
-    if (isVisible) {
-      // Idempotent: re-resolve elements that have appeared since.
-      refresh();
-      return;
+    if (!isVisible) {
+      isVisible = true;
+      bindListeners();
     }
 
-    isVisible = true;
+    // mountHints() skips what is already on the page, so calling show() again
+    // picks up hints whose elements have appeared since.
     mountHints();
-    bindListeners();
+    refresh();
   }
 
   function hide() {
@@ -552,7 +544,7 @@ export function hints(config: HintsConfig = {}): Hints {
     }
 
     isVisible = false;
-    closePopover();
+    close();
     unmountHints();
 
     teardown.forEach(off => off());
@@ -574,7 +566,7 @@ export function hints(config: HintsConfig = {}): Hints {
       return;
     }
 
-    closePopover();
+    close();
     unmountHints();
     mountHints();
   }
