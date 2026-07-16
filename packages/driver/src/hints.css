@@ -12,10 +12,16 @@
   width: var(--driver-hint-size, 24px);
   height: var(--driver-hint-size, 24px);
   cursor: pointer;
-  /* Below the popover, above the page. */
-  z-index: 999999998;
+  /* Above the page but below the overlay, so when a hint is open with the
+     overlay enabled, the other beacons dim with the rest of the page. */
+  z-index: 999999996;
   /* The beacon is centered on the anchor point set inline by the script. */
   transform: translate(-50%, -50%);
+}
+
+/* The open hint's beacon rises above the overlay, next to its popover. */
+.driver-hint[aria-expanded="true"] {
+  z-index: 999999998;
 }
 
 .driver-hint-hidden {
@@ -69,20 +75,18 @@
   }
 }
 
-/* The popover arrow is a white triangle that normally sits against a tour's
-   darkened overlay. Hints usually have no overlay, so on a light page it
-   would vanish and the popover would look detached from its beacon — a faint
-   halo keeps it visible on any background. */
-.driver-hint-popover .driver-popover-arrow {
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.25)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-}
-
-/* The opt-in overlay shown while a hint is open. Beacons and the popover sit
-   above it, so hints stay clickable while the page behind is dimmed. */
+/* The opt-in overlay shown while a hint is open: a full-screen dim with the
+   hint's element cut out. Only the open hint's beacon and popover sit above
+   it. The svg itself lets pointer events through (the element in the cutout
+   stays interactive); the dimmed path catches them, so clicking the dim
+   closes the hint. */
 .driver-hint-overlay {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 999999997;
+  pointer-events: none;
   animation: driver-hint-overlay-fade 200ms ease-out;
 }
 

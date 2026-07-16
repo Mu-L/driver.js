@@ -126,9 +126,11 @@ Size and colour come from CSS variables:
 
 ## Dimming the page
 
-Pass `overlay: true` to dim the page while a hint is open. The beacons and the
-popover stay above the overlay, so other hints remain clickable, and clicking
-the dimmed page closes the hint like any outside click:
+Pass `overlay: true` to dim the page while a hint is open — the hint's element
+is cut out of the dim, spotlighting it exactly like a tour step, and it stays
+interactive inside the cutout. Everything else, including the other beacons,
+sits under the overlay; clicking the dimmed page closes the hint like any
+outside click:
 
 ```js
 const productHints = hints({

@@ -147,8 +147,9 @@ const productHints = hints({
 ## Dimming the page
 
 With `overlay: true` the page dims while a hint is open — a focus mode for
-hints. The beacons stay above the overlay, so you can hop from one hint to the
-next; clicking the dimmed page closes the hint.
+hints. The hint's element is cut out of the dim and stays interactive, exactly
+like a tour step's highlight; the other beacons wait under the overlay.
+Clicking the dimmed page closes the hint.
 
 <HintsSample
   idPrefix="overlay"
@@ -159,7 +160,7 @@ next; clicking the dimmed page closes the hint.
       id: "export",
       popover: {
         title: "Focus mode",
-        description: "The page behind is dimmed while you read this. Click the other beacon to hop over.",
+        description: "The Export button is spotlighted and still clickable; the rest of the page is dimmed.",
       },
     },
     {
@@ -167,8 +168,8 @@ next; clicking the dimmed page closes the hint.
       id: "summary",
       beacon: { side: "left", align: "center" },
       popover: {
-        title: "Still reachable",
-        description: "Beacons sit above the overlay, so switching hints never needs the overlay to go away.",
+        title: "One at a time",
+        description: "The other beacons wait under the dim. Close this hint to get back to them.",
         side: "bottom",
       },
     },

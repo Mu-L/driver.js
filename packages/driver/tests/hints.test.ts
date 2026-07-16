@@ -277,7 +277,8 @@ describe("popover arrow alignment", () => {
 });
 
 describe("overlay", () => {
-  const overlayEl = () => document.querySelector<HTMLElement>(".driver-hint-overlay");
+  const overlayEl = () => document.querySelector<SVGSVGElement>(".driver-hint-overlay");
+  const overlayPath = () => overlayEl()?.querySelector("path");
 
   it("shows no overlay by default", () => {
     const productHints = createHints({ hints: SAMPLE_HINTS });
@@ -320,8 +321,42 @@ describe("overlay", () => {
     productHints.show();
     productHints.open("intro");
 
-    expect(overlayEl()?.style.backgroundColor).toBe("rgb(18, 52, 86)");
-    expect(overlayEl()?.style.opacity).toBe("0.4");
+    expect(["#123456", "rgb(18, 52, 86)"]).toContain(overlayPath()?.style.fill);
+    expect(overlayPath()?.style.opacity).toBe("0.4");
+  });
+
+  it("cuts the hint's element out of the dim", () => {
+    const rect = (over: Partial<DOMRect>): DOMRect =>
+      ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...over }) as DOMRect;
+    const el = document.querySelector<HTMLElement>("#intro")!;
+    el.getBoundingClientRect = () => rect({ x: 400, y: 300, width: 200, height: 40 });
+
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    // Full-screen subpath plus a cutout subpath. The cutout starts at the
+    // element's x minus the 10px padding, plus the 5px corner radius: 395.
+    const d = overlayPath()?.getAttribute("d") ?? "";
+    expect(d).toContain(`M${window.innerWidth},0L0,0L0,${window.innerHeight}`);
+    expect(d).toContain("M395,290");
+  });
+
+  it("tracks the element when the page scrolls", async () => {
+    const rect = (over: Partial<DOMRect>): DOMRect =>
+      ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...over }) as DOMRect;
+    const el = document.querySelector<HTMLElement>("#intro")!;
+    el.getBoundingClientRect = () => rect({ x: 400, y: 300, width: 200, height: 40 });
+
+    const productHints = createHints({ hints: SAMPLE_HINTS, overlay: true });
+    productHints.show();
+    productHints.open("intro");
+
+    el.getBoundingClientRect = () => rect({ x: 400, y: 100, width: 200, height: 40 });
+    window.dispatchEvent(new Event("scroll"));
+    await nextFrame();
+
+    expect(overlayPath()?.getAttribute("d")).toContain("M395,90");
   });
 
   it("closes the hint when the dimmed page is clicked", () => {
@@ -329,7 +364,8 @@ describe("overlay", () => {
     productHints.show();
     productHints.open("intro");
 
-    overlayEl()!.click();
+    // Clicks land on the dimmed path (the svg lets pointer events through).
+    overlayPath()!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(popoverEl()).toBeNull();
     expect(overlayEl()).toBeNull();

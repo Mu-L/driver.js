@@ -7,9 +7,14 @@ import {
   Side,
   hidePopover,
 } from "./popover";
+import { generateStageSvgPathString } from "./overlay";
 import { ARROW_CORNER_INSET, ARROW_SIZE, PositionOptions, repositionPopover } from "./position";
 import { resolveElement } from "./utils";
 import "./hints.css";
+
+// The cutout around the active hint's element, mirroring the tour's defaults.
+const OVERLAY_PADDING = 10;
+const OVERLAY_RADIUS = 5;
 
 // Part of the hints API surface: beacon/popover placement and the DOM handed
 // to onPopoverRender are described with the popover primitive's types.
@@ -107,7 +112,7 @@ export function hints(config: HintsConfig = {}): Hints {
 
   let activeId: string | undefined;
   let popover: PopoverDOM | undefined;
-  let overlay: HTMLElement | undefined;
+  let overlay: SVGSVGElement | undefined;
   let refreshTimeout: number | undefined;
   let isVisible = false;
 
@@ -322,16 +327,49 @@ export function hints(config: HintsConfig = {}): Hints {
     };
   }
 
-  function showOverlay() {
+  function overlayPathFor(element: Element): string {
+    const rect = element.getBoundingClientRect();
+
+    return generateStageSvgPathString(
+      { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      { padding: OVERLAY_PADDING, radius: OVERLAY_RADIUS }
+    );
+  }
+
+  function showOverlay(entry: MountedHint) {
     if (!currentConfig.overlay || overlay) {
       return;
     }
 
-    overlay = document.createElement("div");
-    overlay.className = "driver-hint-overlay";
-    overlay.style.backgroundColor = currentConfig.overlayColor || "#000";
-    overlay.style.opacity = `${currentConfig.overlayOpacity ?? 0.7}`;
-    document.body.appendChild(overlay);
+    // A full-screen dim with the hint's element cut out, so what the hint
+    // talks about stays visible. Pointer events land on the path only: clicks
+    // on the dim close the hint (via the outside-click listener) while the
+    // element inside the cutout stays interactive.
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "driver-hint-overlay");
+    svg.setAttribute("viewBox", `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    svg.setAttribute("preserveAspectRatio", "xMinYMin slice");
+    svg.style.fillRule = "evenodd";
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", overlayPathFor(entry.element));
+    path.style.fill = currentConfig.overlayColor || "#000";
+    path.style.opacity = `${currentConfig.overlayOpacity ?? 0.7}`;
+    path.style.pointerEvents = "auto";
+
+    svg.appendChild(path);
+    document.body.appendChild(svg);
+
+    overlay = svg;
+  }
+
+  function refreshOverlay(entry: MountedHint) {
+    if (!overlay) {
+      return;
+    }
+
+    overlay.setAttribute("viewBox", `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    overlay.firstElementChild?.setAttribute("d", overlayPathFor(entry.element));
   }
 
   function removeOverlay() {
@@ -390,7 +428,7 @@ export function hints(config: HintsConfig = {}): Hints {
 
     activeId = entry.id;
     entry.beacon.setAttribute("aria-expanded", "true");
-    showOverlay();
+    showOverlay(entry);
     popover = renderPopover(entry.beacon, popoverOptions(entry));
 
     const onOpen = entry.hint.onOpen || currentConfig.onOpen;
@@ -454,6 +492,7 @@ export function hints(config: HintsConfig = {}): Hints {
     }
 
     repositionPopover(popover, active.beacon, popoverPosition(active));
+    refreshOverlay(active);
 
     // The beacon is gone from the screen, so the popover has nothing to hang
     // off; the IntersectionObserver closes it, this just avoids a flash.

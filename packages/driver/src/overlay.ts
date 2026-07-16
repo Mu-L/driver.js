@@ -102,7 +102,14 @@ function renderOverlay(ctx: Context, stagePosition: StageDefinition) {
     throw new Error("no path element found in stage svg");
   }
 
-  pathElement.setAttribute("d", generateStageSvgPathString(ctx, stagePosition));
+  pathElement.setAttribute("d", generateStageSvgPathString(stagePosition, stageOptions(ctx)));
+}
+
+function stageOptions(ctx: Context) {
+  return {
+    padding: ctx.getConfig("stagePadding") || 0,
+    radius: ctx.getConfig("stageRadius") || 0,
+  };
 }
 
 function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
@@ -131,7 +138,7 @@ function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
 
   const stagePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
-  stagePath.setAttribute("d", generateStageSvgPathString(ctx, stage));
+  stagePath.setAttribute("d", generateStageSvgPathString(stage, stageOptions(ctx)));
 
   stagePath.style.fill = ctx.getConfig("overlayColor") || "rgb(0,0,0)";
   stagePath.style.opacity = `${ctx.getConfig("overlayOpacity")}`;
@@ -143,12 +150,14 @@ function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
   return svg;
 }
 
-function generateStageSvgPathString(ctx: Context, stage: StageDefinition) {
+// The full-screen dim with a rounded cutout, as a single evenodd path. Pure —
+// the tour passes its stagePadding/stageRadius, the hints overlay its own.
+export function generateStageSvgPathString(stage: StageDefinition, options: { padding: number; radius: number }) {
   const windowX = window.innerWidth;
   const windowY = window.innerHeight;
 
-  const stagePadding = ctx.getConfig("stagePadding") || 0;
-  const stageRadius = ctx.getConfig("stageRadius") || 0;
+  const stagePadding = options.padding;
+  const stageRadius = options.radius;
 
   const stageWidth = stage.width + stagePadding * 2;
   const stageHeight = stage.height + stagePadding * 2;
