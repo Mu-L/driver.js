@@ -13,6 +13,8 @@ import compress from "astro-compress";
 // aliased separately, and listed first so it matches before the bare specifier.
 const driverSource = fileURLToPath(new URL("../../packages/driver/src/driver.ts", import.meta.url));
 const driverCss = fileURLToPath(new URL("../../packages/driver/src/driver.css", import.meta.url));
+const hintsSource = fileURLToPath(new URL("../../packages/driver/src/hints.ts", import.meta.url));
+const hintsCss = fileURLToPath(new URL("../../packages/driver/src/hints.css", import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
@@ -46,6 +48,8 @@ export default defineConfig({
     resolve: {
       alias: [
         { find: "driver.js/dist/driver.css", replacement: driverCss },
+        { find: "driver.js/dist/hints.css", replacement: hintsCss },
+        { find: "driver.js/hints", replacement: hintsSource },
         { find: "driver.js", replacement: driverSource },
       ],
     },

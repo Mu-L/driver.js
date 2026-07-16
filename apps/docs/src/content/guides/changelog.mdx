@@ -10,6 +10,21 @@ ships, these entries move under a versioned heading.
 
 ## Unreleased
 
+### Added
+
+- Hints — pulsing beacons that open a popover on click; no overlay, the page
+  stays interactive. New `driver.js/hints` entry, ~5KB gzip.
+  [Guide](/docs/hints). ([#363](https://github.com/nilbuild/driver.js/issues/363))
+- `--driver-hint-size` and `--driver-hint-color` CSS variables to style the beacons.
+- `sideEffects` field in package.json for better tree-shaking.
+
+### Changed
+
+- Popover internals now live in a shared layer used by both tours and hints;
+  tour behaviour verified unchanged against 1.7.0.
+- Package build migrated from vite to tsdown. Artifact names, exports map and
+  CDN globals unchanged; sizes within ±2%.
+
 ## 1.7.0
 
 ### Added
