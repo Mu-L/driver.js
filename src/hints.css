@@ -1,5 +1,8 @@
-/* Beacon styles. The hint popover reuses the popover styles from driver.css,
-   so this stylesheet complements that one rather than replacing it. */
+/* The hint popover shares its styling with the tour, so this entry pulls in
+   the same popover stylesheet the tour uses. Importing hints.css is therefore
+   all a hints-only consumer needs — no separate popover styles to remember.
+   Everything below is beacon-specific. */
+@import "./popover.css";
 
 .driver-hint {
   all: unset;

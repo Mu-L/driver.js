@@ -5,12 +5,13 @@ import { createDriver, navButton, SAMPLE_STEPS, useDriverHarness } from "./utils
 
 useDriverHarness();
 
-// The footer button styling lives in src/driver.css. jsdom resolves the
-// selectors below through getComputedStyle, so we load the real stylesheet
-// once into <head> (the harness only resets <body>, so it survives each test).
+// The footer button styling lives in src/popover.css (shared with the hints
+// entry). jsdom resolves the selectors below through getComputedStyle but does
+// not follow driver.css's @import, so we inject the popover stylesheet directly.
+// The harness only resets <body>, so it survives each test.
 beforeAll(() => {
   const style = document.createElement("style");
-  style.textContent = readFileSync(resolve(process.cwd(), "src/driver.css"), "utf8");
+  style.textContent = readFileSync(resolve(process.cwd(), "src/popover.css"), "utf8");
   document.head.appendChild(style);
 });
 
