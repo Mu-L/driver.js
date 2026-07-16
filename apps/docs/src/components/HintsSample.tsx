@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import type { DriverHint, Hints } from "driver.js/hints";
+import type { DriverHint, HintsConfig, Hints } from "driver.js/hints";
 import { hints } from "driver.js/hints";
 import "driver.js/dist/driver.css";
 import "driver.js/dist/hints.css";
 
 type HintsSampleProps = {
   hints: DriverHint[];
+  // Instance-level options (buttonText, popoverClass, beacon defaults, ...).
+  config?: Omit<HintsConfig, "hints">;
+  // Prefixes the ids of the mock UI below so several samples can share a page.
+  idPrefix?: string;
   buttonText?: string;
-  onDismiss?: "persist";
 };
 
 // A small mock UI the hints attach to, so every sample on the page is
-// self-contained. The hint configs passed in reference the ids rendered here.
+// self-contained. The hint configs passed in reference the ids rendered here:
+// `${idPrefix}-export`, `${idPrefix}-share`, `${idPrefix}-summary`.
 export function HintsSample(props: HintsSampleProps) {
-  const { buttonText = "Show Hints" } = props;
+  const { buttonText = "Show Hints", idPrefix = "hint-demo" } = props;
   const instance = useRef<Hints | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -24,7 +28,7 @@ export function HintsSample(props: HintsSampleProps) {
   function onToggle() {
     if (!instance.current) {
       instance.current = hints({
-        popoverClass: "driverjs-theme",
+        ...props.config,
         hints: props.hints,
       });
     }
@@ -42,19 +46,19 @@ export function HintsSample(props: HintsSampleProps) {
     <div className="my-6">
       <div className="rounded-lg border border-gray-200 p-5">
         <div className="mb-4 flex items-center justify-between">
-          <span id="hint-demo-title" className="text-lg font-semibold">
+          <span id={`${idPrefix}-title`} className="text-lg font-semibold">
             Quarterly Report
           </span>
           <span className="flex gap-2">
             <button
-              id="hint-demo-export"
+              id={`${idPrefix}-export`}
               type="button"
               className="cursor-pointer rounded-md border border-gray-300 px-3 py-1 text-sm"
             >
               Export
             </button>
             <button
-              id="hint-demo-share"
+              id={`${idPrefix}-share`}
               type="button"
               className="cursor-pointer rounded-md border border-gray-300 px-3 py-1 text-sm"
             >
@@ -62,7 +66,7 @@ export function HintsSample(props: HintsSampleProps) {
             </button>
           </span>
         </div>
-        <p id="hint-demo-summary" className="m-0 text-sm text-gray-600">
+        <p id={`${idPrefix}-summary`} className="m-0 text-sm text-gray-600">
           Revenue is up 12% quarter over quarter. Click the beacons to explore what changed — the page stays fully
           interactive while they are shown.
         </p>

@@ -83,8 +83,7 @@ productHints.show();
 The two are deliberately different:
 
 - Closing — clicking the beacon again, clicking anywhere outside, or pressing
-  <kbd>Escape</kbd> closes the popover. The beacon stays, and the hint can be
-  opened again.
+  <kbd>Escape</kbd> closes the popover. The beacon stays, and the hint can be opened again.
 - Dismissing — clicking the _Got it_ button removes the beacon entirely and
   fires `onDismiss`. The hint is gone for the session.
 
@@ -120,9 +119,24 @@ Size and colour come from CSS variables:
 
 ```css
 .driver-hint {
-  --driver-hint-size: 24px;
+  --driver-hint-size: 32px;
   --driver-hint-color: #e11d48;
 }
+```
+
+## Dimming the page
+
+Pass `overlay: true` to dim the page while a hint is open. The beacons and the
+popover stay above the overlay, so other hints remain clickable, and clicking
+the dimmed page closes the hint like any outside click:
+
+```js
+const productHints = hints({
+  overlay: true,
+  overlayColor: "#000",
+  overlayOpacity: 0.5,
+  hints: [...],
+});
 ```
 
 ## Using hints alongside a tour
@@ -176,6 +190,11 @@ const productHints = hints({
   // Class and offset for the hint popovers, same meaning as in tours.
   popoverClass: "my-theme",
   popoverOffset: 10,
+
+  // Dim the page while a hint is open. Off by default.
+  overlay: false,
+  overlayColor: "#000",
+  overlayOpacity: 0.7,
 
   // Called when a hint popover is opened / a hint is dismissed.
   onOpen: (element, hint, { config, hints }) => {},
