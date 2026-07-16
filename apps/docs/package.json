@@ -24,6 +24,7 @@
     "tailwindcss": "^4.3.1"
   },
   "devDependencies": {
+    "driver.js": "workspace:*",
     "@tailwindcss/typography": "^0.5.20"
   }
 }

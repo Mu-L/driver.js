@@ -5,7 +5,7 @@
     "jsxImportSource": "react",
     "strictNullChecks": true,
     "paths": {
-      "driver.js": ["../src/driver.ts"]
+      "driver.js": ["../../packages/driver/src/driver.ts"]
     }
   }
 }

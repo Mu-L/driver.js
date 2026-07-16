@@ -6,7 +6,7 @@ if (!version) {
 }
 
 const file = new URL(
-  "../docs/src/content/guides/changelog.mdx",
+  "../../../apps/docs/src/content/guides/changelog.mdx",
   import.meta.url,
 );
 const content = readFileSync(file, "utf8");

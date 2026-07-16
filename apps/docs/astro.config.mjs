@@ -11,8 +11,8 @@ import compress from "astro-compress";
 // Import the library straight from source (../src) so changes to driver.js are
 // reflected instantly with HMR — no build step in between. The CSS subpath is
 // aliased separately, and listed first so it matches before the bare specifier.
-const driverSource = fileURLToPath(new URL("../src/driver.ts", import.meta.url));
-const driverCss = fileURLToPath(new URL("../src/driver.css", import.meta.url));
+const driverSource = fileURLToPath(new URL("../../packages/driver/src/driver.ts", import.meta.url));
+const driverCss = fileURLToPath(new URL("../../packages/driver/src/driver.css", import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
@@ -52,7 +52,7 @@ export default defineConfig({
     server: {
       fs: {
         // Allow importing the library source that lives outside this project.
-        allow: [".."],
+        allow: ["../.."],
       },
     },
   },

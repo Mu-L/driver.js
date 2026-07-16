@@ -4,8 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 
 // The playground imports the library straight from source (../src) so changes
 // to driver.js are reflected instantly with HMR — no build step in between.
-const driverSource = fileURLToPath(new URL("../src/driver.ts", import.meta.url));
-const hintsSource = fileURLToPath(new URL("../src/hints.ts", import.meta.url));
+const driverSource = fileURLToPath(new URL("../../packages/driver/src/driver.ts", import.meta.url));
+const hintsSource = fileURLToPath(new URL("../../packages/driver/src/hints.ts", import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
@@ -22,7 +22,7 @@ export default defineConfig({
     server: {
       fs: {
         // Allow importing the library source that lives outside this project.
-        allow: [".."],
+        allow: ["../.."],
       },
     },
   },

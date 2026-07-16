@@ -18,6 +18,9 @@
   },
   "hooks": {
     "before:init": ["pnpm test:run"],
-    "after:bump": ["node scripts/changelog-release.mjs ${version}"]
+    "after:bump": [
+      "node scripts/changelog-release.mjs ${version}",
+      "git add ../../apps/docs/src/content/guides/changelog.mdx"
+    ]
   }
 }
