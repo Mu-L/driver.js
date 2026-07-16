@@ -83,6 +83,15 @@
   border-width: 7px;
 }
 
+/* box-shadow stops at the popover's box, which leaves the protruding arrow
+   flat and shadow-less. A drop-shadow filter follows the rendered silhouette
+   instead, so the popover and its arrow cast one seamless shadow, whatever
+   the theme's colors are. */
+.driver-hint-popover.driver-popover {
+  box-shadow: none;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
 /* The opt-in overlay shown while a hint is open: a full-screen dim with the
    hint's element cut out. Only the open hint's beacon and popover sit above
    it. The svg itself lets pointer events through (the element in the cutout
