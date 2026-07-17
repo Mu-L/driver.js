@@ -203,6 +203,15 @@ describe("popover config fallbacks", () => {
     expect(navButton("next")?.innerHTML).toBe("Global Next");
   });
 
+  it("narrows the tour buttons to the global showButtons", () => {
+    const d = createDriver({ animate: false, showButtons: ["next"], steps: SAMPLE_STEPS });
+    d.drive();
+
+    expect(navButton("next")?.style.display).toBe("block");
+    expect(navButton("prev")?.style.display).toBe("none");
+    expect(navButton("close")?.style.display).toBe("none");
+  });
+
   it("prefers a step-level popoverClass over the global one", () => {
     const d = createDriver({ animate: false, popoverClass: "global-theme" });
     d.highlight({ element: "#intro", popover: { title: "Intro", popoverClass: "step-theme" } });

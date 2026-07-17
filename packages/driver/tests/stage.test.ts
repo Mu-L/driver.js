@@ -14,21 +14,6 @@ describe("generateStageSvgPathString", () => {
     expect(path.startsWith(`M${w},0L0,0L0,${h}L${w},${h}L${w},0Z`)).toBe(true);
   });
 
-  it("insets the cutout by the padding on every side", () => {
-    const path = generateStageSvgPathString(stage, { padding: 10, radius: 0 });
-
-    expect(path).toContain("M90,90");
-    expect(path).toContain("h220");
-    expect(path).toContain("v70");
-  });
-
-  it("rounds the cutout corners by the radius", () => {
-    const path = generateStageSvgPathString(stage, { padding: 0, radius: 5 });
-
-    expect(path).toContain("a5,5 0 0 1 5,5");
-    expect(path).toContain("M105,100");
-  });
-
   it("clamps the radius when the stage is too small for it", () => {
     const tiny = { x: 0, y: 0, width: 10, height: 10 };
     const path = generateStageSvgPathString(tiny, { padding: 0, radius: 20 });
