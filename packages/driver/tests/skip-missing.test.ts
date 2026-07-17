@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createDriver, popoverTitle, useDriverHarness } from "./utils";
+import { describe, expect, it, vi } from "vitest";
+import { createDriver, navButton, popoverTitle, useDriverHarness } from "./utils";
 
 useDriverHarness();
 
@@ -98,6 +98,74 @@ describe("skipMissingElement", () => {
     d.moveNext();
 
     expect(d.isActive()).toBe(false);
+  });
+
+  it("shows the done button on the last reachable step when the steps after it are missing", () => {
+    const d = createDriver({
+      animate: false,
+      skipMissingElement: true,
+      steps: [
+        { element: "#intro", popover: { title: "Step 1" } },
+        { element: "#card-1", popover: { title: "Step 2" } },
+        { element: "#missing", popover: { title: "Step 3" } },
+      ],
+    });
+    d.drive(1);
+
+    expect(navButton("next")?.textContent).toBe("Done");
+    expect(navButton("next")?.classList.contains("driver-popover-done-btn")).toBe(true);
+    expect(d.isLastStep()).toBe(true);
+    expect(d.hasNextStep()).toBe(false);
+    expect(d.getNextStep()).toBeUndefined();
+  });
+
+  it("runs onDoneClick on the last reachable step when the steps after it are missing", () => {
+    const onDoneClick = vi.fn();
+    const d = createDriver({
+      animate: false,
+      skipMissingElement: true,
+      onDoneClick,
+      steps: [
+        { element: "#intro", popover: { title: "Step 1" } },
+        { element: "#missing", popover: { title: "Step 2" } },
+      ],
+    });
+    d.drive();
+
+    navButton("next")?.click();
+    expect(onDoneClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the previous button on the first reachable step when the steps before it are missing", () => {
+    const d = createDriver({
+      animate: false,
+      skipMissingElement: true,
+      steps: [
+        { element: "#missing", popover: { title: "Step 1" } },
+        { element: "#intro", popover: { title: "Step 2" } },
+        { element: "#card-1", popover: { title: "Step 3" } },
+      ],
+    });
+    d.drive();
+
+    expect(d.getActiveIndex()).toBe(1);
+    expect(navButton("prev")?.disabled).toBe(true);
+    expect(d.isFirstStep()).toBe(true);
+    expect(d.hasPreviousStep()).toBe(false);
+  });
+
+  it("skips missing steps in the middle without treating the current step as last", () => {
+    const d = createDriver({
+      animate: false,
+      skipMissingElement: true,
+      steps: STEPS,
+    });
+    d.drive();
+
+    expect(navButton("next")?.textContent).toBe("Next");
+    expect(d.isLastStep()).toBe(false);
+    expect(d.hasNextStep()).toBe(true);
+    expect(d.getNextStep()?.popover?.title).toBe("Step 3");
   });
 
   it("stays put when moving backward finds no earlier present step", () => {

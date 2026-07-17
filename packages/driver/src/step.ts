@@ -2,6 +2,7 @@ import type { Context, DriverHook } from "./context";
 import type { DriveStep } from "./driver";
 import { AllowedButtons, destroyPopover, PopoverRenderOptions, renderPopover } from "./popover";
 import { PositionOptions, repositionPopover } from "./position";
+import { resolveElement } from "./utils";
 
 // Bridges the tour and the popover primitive: a step's popover resolves here
 // against the instance config (step value first, then the global default, then
@@ -9,12 +10,37 @@ import { PositionOptions, repositionPopover } from "./position";
 
 const DEFAULT_PROGRESS_TEXT = "{{current}} of {{total}}";
 
+export function shouldSkipStep(ctx: Context, step: DriveStep): boolean {
+  const skip = step.skipMissingElement ?? ctx.getConfig("skipMissingElement");
+  if (!skip || !step.element) {
+    return false;
+  }
+
+  return !resolveElement(step.element);
+}
+
+// The index navigation would actually land on, starting at fromIndex
+// (inclusive) and walking in the given direction past any skipped steps.
+// Resolved against the live DOM, so the answer can change as elements mount
+// and unmount; every first/last-step decision goes through here so the done
+// button and the tour's real end always agree (#616).
+export function findReachableIndex(ctx: Context, fromIndex: number, direction: 1 | -1): number | undefined {
+  const steps = ctx.getConfig("steps") || [];
+
+  for (let i = fromIndex; i >= 0 && i < steps.length; i += direction) {
+    if (!shouldSkipStep(ctx, steps[i])) {
+      return i;
+    }
+  }
+
+  return undefined;
+}
+
 // On the final step the next button acts as the done button, so a dedicated
 // onDoneClick takes precedence over onNextClick when provided.
 export function resolveNextHook(ctx: Context, step?: DriveStep): DriverHook | undefined {
-  const steps = ctx.getConfig("steps") || [];
   const activeIndex = ctx.getState("activeIndex");
-  const isLastStep = activeIndex !== undefined && activeIndex === steps.length - 1;
+  const isLastStep = activeIndex !== undefined && findReachableIndex(ctx, activeIndex + 1, 1) === undefined;
 
   const onDoneClick = step?.popover?.onDoneClick || ctx.getConfig("onDoneClick");
   if (isLastStep && onDoneClick) {
@@ -47,8 +73,8 @@ export function resolveTourStep(ctx: Context, stepIndex: number, defaults: TourS
   const step = steps[stepIndex];
   const popover = step.popover || {};
 
-  const hasNextStep = !!steps[stepIndex + 1];
-  const hasPreviousStep = !!steps[stepIndex - 1];
+  const hasNextStep = findReachableIndex(ctx, stepIndex + 1, 1) !== undefined;
+  const hasPreviousStep = findReachableIndex(ctx, stepIndex - 1, -1) !== undefined;
 
   const doneBtnText = popover.doneBtnText || ctx.getConfig("doneBtnText") || "Done";
   const allowsClosing = ctx.getConfig("allowClose");
@@ -107,9 +133,8 @@ function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): P
 function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): PopoverRenderOptions {
   const popover = step.popover || {};
 
-  const steps = ctx.getConfig("steps") || [];
   const activeIndex = ctx.getState("activeIndex");
-  const isDoneStep = activeIndex !== undefined && activeIndex === steps.length - 1;
+  const isDoneStep = activeIndex !== undefined && findReachableIndex(ctx, activeIndex + 1, 1) === undefined;
 
   return {
     title: popover.title,

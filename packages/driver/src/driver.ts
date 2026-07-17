@@ -3,8 +3,7 @@ import { destroyOverlay } from "./overlay";
 import { destroyEvents, initEvents, requireRefresh } from "./events";
 import { Config, createContext, DriverHook } from "./context";
 import { destroyHighlight, highlight } from "./highlight";
-import { resolveNextHook, resolvePrevHook, resolveTourStep } from "./step";
-import { resolveElement } from "./utils";
+import { findReachableIndex, resolveNextHook, resolvePrevHook, resolveTourStep, shouldSkipStep } from "./step";
 import "./driver.css";
 
 // Re-export the public types so they remain part of the package's type surface.
@@ -198,15 +197,6 @@ export function driver(options: Config = {}): Driver {
     ctx.listen("arrowRightPress", handleArrowRight);
   }
 
-  function shouldSkipStep(step: DriveStep) {
-    const skip = step.skipMissingElement ?? ctx.getConfig("skipMissingElement");
-    if (!skip || !step.element) {
-      return false;
-    }
-
-    return !resolveElement(step.element);
-  }
-
   function drive(stepIndex: number = 0) {
     const steps = ctx.getConfig("steps");
     if (!steps) {
@@ -223,7 +213,7 @@ export function driver(options: Config = {}): Driver {
 
     const currentStep = steps[stepIndex];
 
-    if (shouldSkipStep(currentStep)) {
+    if (shouldSkipStep(ctx, currentStep)) {
       const activeIndex = ctx.getState("activeIndex");
       const direction = typeof activeIndex === "number" && stepIndex < activeIndex ? -1 : 1;
 
@@ -327,12 +317,15 @@ export function driver(options: Config = {}): Driver {
     getConfig: ctx.getConfig,
     getState: ctx.getState,
     getActiveIndex: () => ctx.getState("activeIndex"),
-    isFirstStep: () => ctx.getState("activeIndex") === 0,
-    isLastStep: () => {
-      const steps = ctx.getConfig("steps") || [];
+    isFirstStep: () => {
       const activeIndex = ctx.getState("activeIndex");
 
-      return activeIndex !== undefined && activeIndex === steps.length - 1;
+      return activeIndex !== undefined && findReachableIndex(ctx, activeIndex - 1, -1) === undefined;
+    },
+    isLastStep: () => {
+      const activeIndex = ctx.getState("activeIndex");
+
+      return activeIndex !== undefined && findReachableIndex(ctx, activeIndex + 1, 1) === undefined;
     },
     getActiveStep: () => ctx.getState("activeStep"),
     getActiveElement: () => ctx.getState("activeElement"),
@@ -341,23 +334,26 @@ export function driver(options: Config = {}): Driver {
     getNextStep: () => {
       const steps = ctx.getConfig("steps") || [];
       const activeIndex = ctx.getState("activeIndex");
+      if (activeIndex === undefined) {
+        return undefined;
+      }
 
-      return activeIndex !== undefined ? steps[activeIndex + 1] : undefined;
+      const nextIndex = findReachableIndex(ctx, activeIndex + 1, 1);
+
+      return nextIndex !== undefined ? steps[nextIndex] : undefined;
     },
     moveNext,
     movePrevious,
     moveTo,
     hasNextStep: () => {
-      const steps = ctx.getConfig("steps") || [];
       const activeIndex = ctx.getState("activeIndex");
 
-      return activeIndex !== undefined && !!steps[activeIndex + 1];
+      return activeIndex !== undefined && findReachableIndex(ctx, activeIndex + 1, 1) !== undefined;
     },
     hasPreviousStep: () => {
-      const steps = ctx.getConfig("steps") || [];
       const activeIndex = ctx.getState("activeIndex");
 
-      return activeIndex !== undefined && !!steps[activeIndex - 1];
+      return activeIndex !== undefined && findReachableIndex(ctx, activeIndex - 1, -1) !== undefined;
     },
     highlight: (step: DriveStep) => {
       init();

@@ -12,22 +12,23 @@ ships, these entries move under a versioned heading.
 
 ### Added
 
-- Hints: pulsing beacons that open a popover on click. No overlay by default,
-  the page stays interactive. New `driver.js/hints` entry, ~5KB gzip.
-  [Guide](/docs/hints). ([#363](https://github.com/nilbuild/driver.js/issues/363))
-- `--driver-hint-size` and `--driver-hint-color` CSS variables to style the beacons.
-- Optional hint overlay (`overlay`, `overlayColor`, `overlayOpacity`) that dims
-  the page around the open hint's element, tour-style cutout included.
-- `onButtonClick` hint hook to repurpose the built-in button; runs instead of
-  dismissing, like a tour's `onNextClick`.
+- Hints: pulsing beacons that open a popover on click; overlay optional, the
+  page stays interactive. `driver.js/hints`, ~5KB gzip. [Guide](/docs/hints).
+  ([#363](https://github.com/nilbuild/driver.js/issues/363))
 - `sideEffects` field in package.json for better tree-shaking.
 
 ### Changed
 
-- Popover internals now live in a shared layer used by both tours and hints;
-  tour behaviour verified unchanged against 1.7.0.
-- Package build migrated from vite to tsdown. Artifact names, exports map and
-  CDN globals unchanged; sizes within ±2%.
+- Popover internals shared between tours and hints; tour behaviour verified
+  unchanged against 1.7.0.
+- Build migrated from vite to tsdown; artifact names, exports map and CDN
+  globals unchanged, sizes within ±2%.
+
+### Fixed
+
+- `skipMissingElement`: the last reachable step now shows Done and runs
+  `onDoneClick`; step queries like `isLastStep()` account for skips.
+  ([#616](https://github.com/nilbuild/driver.js/issues/616))
 
 ## 1.7.0
 
