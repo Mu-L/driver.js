@@ -152,8 +152,8 @@ const productHints = hints({
 
 Hints and tours coexist without any wiring: while a tour is running, the
 beacons hide and any open hint closes; when the tour ends, the beacons return
-on their own. Since hint popovers are regular Driver.js popovers, hooks like
-`onPopoverRender` work too. A common pattern is a hint that launches the tour:
+on their own. A common pattern is a hint whose button launches the tour,
+using `onButtonClick` to take over the button:
 
 ```js
 const tour = driver({ steps: [...] });
@@ -166,20 +166,19 @@ const productHints = hints({
       popover: {
         title: "New dashboard",
         description: "Want a quick walkthrough?",
-        onPopoverRender: (popover, { hints: instance }) => {
-          const button = document.createElement("button");
-          button.innerText = "Take the tour";
-          button.addEventListener("click", () => {
-            instance.close();
-            tour.drive();
-          });
-          popover.footerButtons.prepend(button);
+        buttonText: "Take the tour",
+        onButtonClick: (element, hint, { hints: instance }) => {
+          instance.close();
+          tour.drive();
         },
       },
     },
   ],
 });
 ```
+
+Since hint popovers are regular Driver.js popovers, `onPopoverRender` works
+too when you need additional buttons or custom markup, exactly like in tours.
 
 ## Options
 
