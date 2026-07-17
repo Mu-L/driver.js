@@ -18,6 +18,7 @@ type CodeSampleProps = {
 
 function attachFirstButton(popover: PopoverDOM) {
   const firstButton = document.createElement("button");
+  firstButton.className = "driver-popover-footer-btn";
   firstButton.innerText = "Go to First";
   popover.footerButtons.appendChild(firstButton);
 

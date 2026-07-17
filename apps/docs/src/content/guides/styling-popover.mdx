@@ -191,6 +191,7 @@ Here is the CSS used for the above example:
     // the user to the first step.
     onPopoverRender: (popover, { config, state }) => {
       const firstButton = document.createElement("button");
+      firstButton.className = "driver-popover-footer-btn";
       firstButton.innerText = "Go to First";
       popover.footerButtons.appendChild(firstButton);
 
