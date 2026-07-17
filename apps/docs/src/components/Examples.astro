@@ -18,7 +18,6 @@ import { ExampleButton } from "./ExampleButton";
   <ExampleButton id="overlay-color" text="Overlay Color" />
   <ExampleButton id="popover-position" text="Popover Positioning" />
   <ExampleButton id="customizing-popover" text="Customizing Popover" />
-  <ExampleButton id="hints-example" text="Hints" />
   <ExampleButton id="hooks-everything" text="Hooks for Everything" />
   <a href="/docs/installation"
      class="cursor-pointer flex items-center rounded-xl border-2 border-black bg-yellow-300 px-5 py-2 text-base lg:text-lg font-medium text-black shadow-[3px_3px_0_0_#000] transition-all duration-100 hover:bg-yellow-400 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000]">
@@ -29,8 +28,6 @@ import { ExampleButton } from "./ExampleButton";
 <script>
   import { driver } from "driver.js";
   import "driver.js/dist/driver.css";
-  import { hints } from "driver.js/hints";
-  import "driver.js/dist/hints.css";
   import { mountDummyElement, removeDummyElement } from "../lib/dummyElement";
 
   function markDone(btn) {
@@ -507,88 +504,6 @@ import { ExampleButton } from "./ExampleButton";
         align: 'start'
       }
     });
-  });
-
-  const hintsBtn = document.getElementById('hints-example');
-  const hintsTour = driver({
-    popoverClass: 'driverjs-theme',
-    showButtons: ['next', 'previous'],
-    steps: [
-      {
-        element: '[data-hero-text]',
-        popover: {
-          title: "From Hint to Tour",
-          description: "A hint's button just started this tour through the <span class='font-medium'>onButtonClick</span> hook. Hints and tours work together without any wiring.",
-          side: 'bottom',
-          align: 'start'
-        }
-      },
-      {
-        element: '[data-example-btns]',
-        popover: {
-          title: "And Back Again",
-          description: "While a tour runs, the beacons wait; close this and they return on their own.",
-          side: 'top',
-          align: 'start'
-        }
-      }
-    ]
-  });
-
-  const demoHints = hints({
-    popoverClass: 'driverjs-theme',
-    hints: [
-      {
-        element: '[data-driver-name]',
-        id: 'what',
-        popover: {
-          title: "Hints, No Tour Required",
-          description: "Beacons sit quietly on the page and open on click, in any order. Nothing is blocked. The button below dismisses this hint for good.",
-          side: 'bottom',
-          align: 'start'
-        }
-      },
-      {
-        element: '[data-hero-text]',
-        id: 'tour',
-        beacon: { side: 'left', align: 'center' },
-        popover: {
-          title: "A Tour Inside a Hint",
-          buttonText: "Take the tour",
-          description: "A hint's button can do anything, including starting a tour.",
-          side: 'bottom',
-          align: 'start',
-          onButtonClick: (element, hint, { hints: instance }) => {
-            instance.close();
-            hintsTour.drive();
-          }
-        }
-      },
-      {
-        element: '[data-example-btns]',
-        id: 'docs',
-        popover: {
-          title: "Learn More",
-          buttonText: "Read the Hints guide",
-          description: "Dismissals, persistence, beacon styling and an optional spotlight overlay are covered in the docs.",
-          side: 'top',
-          align: 'start',
-          onButtonClick: () => {
-            window.location.href = '/docs/hints';
-          }
-        }
-      }
-    ]
-  });
-
-  hintsBtn.addEventListener('click', () => {
-    if (demoHints.isVisible()) {
-      demoHints.hide();
-      return;
-    }
-
-    demoHints.show();
-    markDone(hintsBtn);
   });
 
   const hooksEverythingBtn = document.getElementById('hooks-everything');
