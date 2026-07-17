@@ -39,6 +39,9 @@
 .driver-hint-pulse {
   inset: 0;
   opacity: 0.6;
+  /* Scales past the button box; without this the invisible ring would
+     extend the click target and swallow clicks meant for the page. */
+  pointer-events: none;
   animation: driver-hint-pulse var(--driver-hint-animation-duration, 2s) ease-out infinite;
 }
 
@@ -49,12 +52,12 @@
   }
 
   70% {
-    transform: scale(1);
+    transform: scale(1.5);
     opacity: 0;
   }
 
   to {
-    transform: scale(1);
+    transform: scale(1.5);
     opacity: 0;
   }
 }
