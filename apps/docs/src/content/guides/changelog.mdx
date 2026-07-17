@@ -15,6 +15,12 @@ ships, these entries move under a versioned heading.
 - Hints: pulsing beacons that open a popover on click; overlay optional, the
   page stays interactive. `driver.js/hints`, ~5KB gzip. [Guide](/docs/hints).
   ([#363](https://github.com/nilbuild/driver.js/issues/363))
+- `advanceOnClick` (driver and step level) to advance the tour by clicking the
+  highlighted element itself.
+  ([#606](https://github.com/nilbuild/driver.js/issues/606))
+- `waitForElement` (driver and step level) to wait up to N ms for a step's
+  element before treating it as missing.
+  ([#606](https://github.com/nilbuild/driver.js/issues/606))
 - `sideEffects` field in package.json for better tree-shaking.
 
 ### Changed

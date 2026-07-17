@@ -30,9 +30,20 @@ export type Config = {
 
   disableActiveInteraction?: boolean;
 
+  // Advance the tour when the highlighted element is clicked, through the same
+  // hook resolution as the next button. The element's own click behaviour
+  // still runs; nothing is prevented. (default: false)
+  advanceOnClick?: boolean;
+
   // Skip a step whose target element is specified but missing from the DOM.
   // Element-less steps are intentional centered steps and never skipped. (default: false)
   skipMissingElement?: boolean;
+
+  // Wait up to this many milliseconds for a step's missing element to appear
+  // before falling back to the usual missing-element behaviour (centered
+  // popover, or a skip when skipMissingElement is set). The current step
+  // stays highlighted while waiting. (default: 0, off)
+  waitForElement?: number;
 
   allowKeyboardControl?: boolean;
 
@@ -84,7 +95,9 @@ function createConfigStore() {
       overlayOpacity: 0.7,
       smoothScroll: false,
       disableActiveInteraction: false,
+      advanceOnClick: false,
       skipMissingElement: false,
+      waitForElement: 0,
       showProgress: false,
       stagePadding: 10,
       stageRadius: 5,
@@ -127,6 +140,7 @@ export type State = {
   __activeOnDestroyed?: Element;
   __resizeTimeout?: number;
   __transitionCallback?: () => void;
+  __pendingWaitCancel?: () => void;
   __activeStagePosition?: StageDefinition;
   __overlaySvg?: SVGSVGElement;
 
@@ -135,6 +149,7 @@ export type State = {
     onKeydown: (e: KeyboardEvent) => void;
     onResize: () => void;
     onScroll: () => void;
+    onClick: (e: MouseEvent) => void;
   };
 };
 
@@ -165,6 +180,7 @@ function createStateStore() {
 
 type allowedEvents =
   | "overlayClick"
+  | "activeElementClick"
   | "escapePress"
   | "nextClick"
   | "prevClick"

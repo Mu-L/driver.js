@@ -4,6 +4,7 @@ import { destroyEvents, initEvents, requireRefresh } from "./events";
 import { Config, createContext, DriverHook } from "./context";
 import { destroyHighlight, highlight } from "./highlight";
 import { findReachableIndex, resolveNextHook, resolvePrevHook, resolveTourStep, shouldSkipStep } from "./step";
+import { resolveElement } from "./utils";
 import "./driver.css";
 
 // Re-export the public types so they remain part of the package's type surface.
@@ -18,7 +19,9 @@ export type DriveStep = {
   onDeselected?: DriverHook;
   popover?: Popover;
   disableActiveInteraction?: boolean;
+  advanceOnClick?: boolean;
   skipMissingElement?: boolean;
+  waitForElement?: number;
   data?: Record<string, any>;
 };
 
@@ -129,6 +132,32 @@ export function driver(options: Config = {}): Driver {
     }
   }
 
+  function handleActiveElementClick() {
+    const isTransitioning = ctx.getState("__transitionCallback");
+    if (isTransitioning) {
+      return;
+    }
+
+    const activeStep = ctx.getState("__activeStep");
+    if (!activeStep) {
+      return;
+    }
+
+    const advanceOnClick = activeStep.advanceOnClick ?? ctx.getConfig("advanceOnClick");
+    if (!advanceOnClick) {
+      return;
+    }
+
+    const activeElement = ctx.getState("__activeElement");
+    const onNextClick = resolveNextHook(ctx, activeStep);
+    if (onNextClick) {
+      onNextClick(activeElement, activeStep, ctx.getHookOpts());
+      return;
+    }
+
+    moveNext();
+  }
+
   function handleArrowLeft() {
     const isTransitioning = ctx.getState("__transitionCallback");
     if (isTransitioning) {
@@ -191,13 +220,52 @@ export function driver(options: Config = {}): Driver {
     initEvents(ctx);
 
     ctx.listen("overlayClick", handleOverlayClick);
+    ctx.listen("activeElementClick", handleActiveElementClick);
     ctx.listen("escapePress", handleClose);
     ctx.listen("closeClick", handleClose);
     ctx.listen("arrowLeftPress", handleArrowLeft);
     ctx.listen("arrowRightPress", handleArrowRight);
   }
 
-  function drive(stepIndex: number = 0) {
+  function cancelElementWait() {
+    const cancel = ctx.getState("__pendingWaitCancel");
+    if (!cancel) {
+      return;
+    }
+
+    ctx.setState("__pendingWaitCancel", undefined);
+    cancel();
+  }
+
+  // Re-resolves the step's element on every DOM mutation rather than polling;
+  // this also covers function elements, since they query the mutated DOM.
+  function waitForStepElement(step: DriveStep, timeout: number, onSettled: () => void) {
+    const settle = () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+      ctx.setState("__pendingWaitCancel", undefined);
+      onSettled();
+    };
+
+    const observer = new MutationObserver(() => {
+      if (resolveElement(step.element)) {
+        settle();
+      }
+    });
+
+    const timer = window.setTimeout(settle, timeout);
+
+    ctx.setState("__pendingWaitCancel", () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    });
+
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+  }
+
+  function drive(stepIndex: number = 0, hasWaitedForElement = false) {
+    cancelElementWait();
+
     const steps = ctx.getConfig("steps");
     if (!steps) {
       console.error("No steps to drive through");
@@ -212,6 +280,14 @@ export function driver(options: Config = {}): Driver {
     }
 
     const currentStep = steps[stepIndex];
+
+    // The current step stays highlighted while waiting; a timeout falls
+    // through to the usual missing-element handling below.
+    const waitTimeout = currentStep.waitForElement ?? ctx.getConfig("waitForElement") ?? 0;
+    if (!hasWaitedForElement && waitTimeout > 0 && currentStep.element && !resolveElement(currentStep.element)) {
+      waitForStepElement(currentStep, waitTimeout, () => drive(stepIndex, true));
+      return;
+    }
 
     if (shouldSkipStep(ctx, currentStep)) {
       const activeIndex = ctx.getState("activeIndex");
@@ -273,6 +349,7 @@ export function driver(options: Config = {}): Driver {
     document.body.classList.remove("driver-active", "driver-fade", "driver-simple", "driver-no-scroll");
     document.body.style.removeProperty("--driver-animation-duration");
 
+    cancelElementWait();
     destroyEvents(ctx);
     destroyPopover(ctx.getState("popover"));
     destroyHighlight();
@@ -308,6 +385,7 @@ export function driver(options: Config = {}): Driver {
     },
     setConfig: ctx.setConfig,
     setSteps: (steps: DriveStep[]) => {
+      cancelElementWait();
       ctx.resetState();
       ctx.setConfig({
         ...ctx.getConfig(),

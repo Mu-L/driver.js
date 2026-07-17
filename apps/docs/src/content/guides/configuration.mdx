@@ -65,11 +65,26 @@ type Config = {
   // Can be configured at the step level as well
   disableActiveInteraction?: boolean;
 
+  // Advance the tour when the highlighted element is clicked, as if the next
+  // button was pressed; onNextClick and onDoneClick still apply. The element's
+  // own click behavior runs normally. Has no effect on steps where
+  // disableActiveInteraction blocks clicks. Can be configured at the step
+  // level. (default: false)
+  advanceOnClick?: boolean;
+
   // Skip a step whose target element is specified but missing from the DOM,
   // moving on in the direction of travel instead of showing the centered
   // fallback popover. Steps without an element are intentional centered steps
   // and are never skipped. Can be configured at the step level. (default: false)
   skipMissingElement?: boolean;
+
+  // Wait up to this many milliseconds for a step's element to appear before
+  // treating it as missing (centered fallback popover, or a skip when
+  // skipMissingElement is set). The current step stays highlighted while
+  // waiting. Useful when the next element is rendered on demand, e.g. inside
+  // a modal that the previous step's click opens. Can be configured at the
+  // step level. (default: 0, off)
+  waitForElement?: number;
 
   // If you want to add custom class to the popover
   popoverClass?: string;
@@ -310,9 +325,17 @@ type DriveStep = {
   // Whether to disable interaction with the highlighted element. (default: false)
   disableActiveInteraction?: boolean;
 
+  // Advance the tour when this step's highlighted element is clicked.
+  // Overrides the driver-level option for this step. (default: false)
+  advanceOnClick?: boolean;
+
   // Skip this step when its target element is specified but missing from the
   // DOM. Overrides the driver-level option for this step. (default: false)
   skipMissingElement?: boolean;
+
+  // Wait up to this many milliseconds for this step's element to appear before
+  // treating it as missing. Overrides the driver-level option. (default: 0, off)
+  waitForElement?: number;
 
   // Arbitrary data that you can pass to the step in order to support complex custom logic in hooks.
   data?: Record<string, any>;

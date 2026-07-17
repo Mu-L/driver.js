@@ -43,6 +43,26 @@ driverObj.highlight({
   },
 });`,
   },
+  {
+    name: "Hints",
+    code: `import { hints } from "driver.js/hints";
+import "driver.js/dist/hints.css";
+
+const productHints = hints({
+  hints: [
+    {
+      element: "#export-btn",
+      popover: { title: "New: Export", description: "Download reports as CSV or PDF." },
+    },
+    {
+      element: "#filters",
+      popover: { title: "Filters", description: "Narrow results by date or owner." },
+    },
+  ],
+});
+
+productHints.show();`,
+  },
 ];
 ---
 
@@ -50,7 +70,7 @@ driverObj.highlight({
   <Container>
     <h2 class="text-3xl md:text-4xl font-bold mb-2 md:mb-3">Your first tour in seconds 🦊</h2>
     <p class="text-base text-black/70 md:text-lg mb-8 md:mb-10">
-      Import driver.js, describe your steps, and call <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm text-black">drive()</code>. That's the whole setup.
+      Import driver.js, describe your steps, and call <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm text-black">drive()</code>. That's the whole setup. Hints follow the same recipe with <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm text-black">show()</code>.
     </p>
 
     <div id="code-showcase" class="overflow-hidden rounded-2xl bg-[#101010] shadow-[6px_6px_0_0_#000]">

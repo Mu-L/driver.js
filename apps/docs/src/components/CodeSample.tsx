@@ -72,6 +72,18 @@ export function CodeSample(props: CodeSampleProps) {
         };
       }
 
+      if (id === "interactive-wait" && tour) {
+        // Stands in for an app rendering a modal on demand: pressing next
+        // mounts the element shortly after, while the tour is already
+        // waiting for it via waitForElement.
+        tour[0].popover!.onNextClick = () => {
+          window.setTimeout(mountDummyElement, 800);
+          driverObj.moveNext();
+        };
+        tour[1].onDeselected = () => removeDummyElement();
+        config!.onDestroyed = () => removeDummyElement();
+      }
+
       if (tour?.[2]?.popover?.title === "Next Step is Async") {
         tour[2].popover.onNextClick = () => {
           mountDummyElement();

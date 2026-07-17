@@ -8,6 +8,7 @@ import { durationGroup } from "./duration";
 import { scrollGroup } from "./scroll";
 import { instancesGroup } from "./instances";
 import { skipMissingGroup } from "./skip-missing";
+import { advanceWaitGroup } from "./advance-wait";
 import { hintsGroup } from "./hints";
 
 export const exampleGroups: ExampleGroup[] = [
@@ -16,6 +17,7 @@ export const exampleGroups: ExampleGroup[] = [
   arrowGroup,
   tourGroup,
   hintsGroup,
+  advanceWaitGroup,
   skipMissingGroup,
   instancesGroup,
   durationGroup,
