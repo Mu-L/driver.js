@@ -710,6 +710,50 @@ describe("hooks", () => {
     expect(hint.id).toBe("intro");
   });
 
+  it("runs onButtonClick instead of dismissing when provided", () => {
+    const onButtonClick = vi.fn();
+    const onDismiss = vi.fn();
+    createHints({
+      onDismiss,
+      hints: [{ element: "#intro", id: "intro", popover: { title: "One", onButtonClick } }, SAMPLE_HINTS[1]],
+    }).show();
+
+    beacons()[0].click();
+    dismissButton()!.click();
+
+    expect(onButtonClick).toHaveBeenCalledTimes(1);
+    expect(onDismiss).not.toHaveBeenCalled();
+    // The hint is neither dismissed nor closed; the hook owns the behavior.
+    expect(beacons()).toHaveLength(2);
+    expect(popoverEl()).not.toBeNull();
+  });
+
+  it("falls back to the instance-level onButtonClick", () => {
+    const onButtonClick = vi.fn();
+    const productHints = createHints({ hints: SAMPLE_HINTS, onButtonClick });
+    productHints.show();
+
+    beaconFor("intro").click();
+    dismissButton()!.click();
+
+    expect(onButtonClick).toHaveBeenCalledTimes(1);
+    expect(beacons()).toHaveLength(2);
+  });
+
+  it("lets onButtonClick dismiss through the instance", () => {
+    const productHints = createHints({
+      hints: SAMPLE_HINTS,
+      onButtonClick: (element, hint) => productHints.dismiss(hint.id!),
+    });
+    productHints.show();
+
+    beaconFor("intro").click();
+    dismissButton()!.click();
+
+    expect(beacons()).toHaveLength(1);
+    expect(popoverEl()).toBeNull();
+  });
+
   it("fires onDismiss for a programmatic dismiss", () => {
     const onDismiss = vi.fn();
     const productHints = createHints({ hints: SAMPLE_HINTS, onDismiss });

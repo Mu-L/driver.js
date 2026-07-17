@@ -18,6 +18,8 @@ ships, these entries move under a versioned heading.
 - `--driver-hint-size` and `--driver-hint-color` CSS variables to style the beacons.
 - Optional hint overlay (`overlay`, `overlayColor`, `overlayOpacity`) that dims
   the page around the open hint's element, tour-style cutout included.
+- `onButtonClick` hint hook to repurpose the built-in button; runs instead of
+  dismissing, like a tour's `onNextClick`.
 - `sideEffects` field in package.json for better tree-shaking.
 
 ### Changed

@@ -386,6 +386,12 @@ type HintsConfig = {
   //   - options.hints: The hints instance
   onOpen?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
   onDismiss?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
+
+  // Runs instead of dismissing when the built-in button is clicked,
+  // like a tour's onNextClick takes over the default advance. Call
+  // options.hints.dismiss(hint.id) yourself to also remove the hint.
+  // Can be configured per hint as well.
+  onButtonClick?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
 };
 ```
 
@@ -438,6 +444,8 @@ type DriverHint = {
     showButton?: boolean;
     // Overrides the instance-level buttonText.
     buttonText?: string;
+    // Overrides the instance-level onButtonClick.
+    onButtonClick?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
 
     // Hook to run after the popover is rendered,
     // same as in tours but with the hint and the

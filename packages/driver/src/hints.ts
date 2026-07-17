@@ -44,6 +44,11 @@ export type HintPopover = {
   showButton?: boolean;
   buttonText?: string;
 
+  // Runs instead of dismissing when the button is clicked, like a tour's
+  // onNextClick takes over the default advance. Call dismiss() yourself to
+  // also remove the hint.
+  onButtonClick?: HintHook;
+
   onPopoverRender?: (popover: PopoverDOM, opts: { hint: DriverHint; hints: Hints }) => void;
 };
 
@@ -84,6 +89,7 @@ export type HintsConfig = {
 
   onOpen?: HintHook;
   onDismiss?: HintHook;
+  onButtonClick?: HintHook;
 };
 
 export interface Hints {
@@ -413,7 +419,15 @@ export function hints(config: HintsConfig = {}): Hints {
 
       popoverClass: `driver-hint-popover ${hintPopover.popoverClass || currentConfig.popoverClass || ""}`.trim(),
 
-      onNextClick: () => dismiss(entry.id),
+      // Resolved at click time so a hook set after render is still picked up.
+      onNextClick: () => {
+        const onButtonClick = hintPopover.onButtonClick || currentConfig.onButtonClick;
+        if (onButtonClick) {
+          return onButtonClick(entry.element, entry.hint, { config: currentConfig, hints: api });
+        }
+
+        dismiss(entry.id);
+      },
       onRender: popoverDom => hintPopover.onPopoverRender?.(popoverDom, { hint: entry.hint, hints: api }),
 
       position: popoverPosition(entry),

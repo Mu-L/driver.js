@@ -89,7 +89,9 @@ The two are deliberately different:
 - Closing: clicking the beacon again, clicking anywhere outside, or pressing
   <kbd>Escape</kbd> closes the popover. The beacon stays, and the hint can be opened again.
 - Dismissing: clicking the _Got it_ button removes the beacon entirely and
-  fires `onDismiss`. The hint is gone for the session.
+  fires `onDismiss`. The hint is gone for the session. Provide `onButtonClick`
+  to take over the button and decide yourself, the same way `onNextClick`
+  takes over a tour's next button.
 
 Only one hint popover is open at a time; opening another swaps it.
 
@@ -206,6 +208,11 @@ const productHints = hints({
   // Called when a hint popover is opened / a hint is dismissed.
   onOpen: (element, hint, { config, hints }) => {},
   onDismiss: (element, hint, { config, hints }) => {},
+
+  // Runs instead of dismissing when the button is clicked, like a
+  // tour's onNextClick takes over the default advance. Call
+  // hints.dismiss(hint.id) yourself to also remove the hint.
+  onButtonClick: (element, hint, { config, hints }) => {},
 });
 ```
 
@@ -234,6 +241,9 @@ const hint = {
     // The dismiss button; hide it for popovers you dismiss programmatically.
     showButton: true,
     buttonText: "Got it",
+
+    // Overrides the instance-level onButtonClick for this hint.
+    onButtonClick: (element, hint, { config, hints }) => {},
 
     onPopoverRender: (popover, { hint, hints }) => {},
   },
