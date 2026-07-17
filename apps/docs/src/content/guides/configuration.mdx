@@ -48,7 +48,11 @@ type Config = {
   overlayClickBehavior?:
     | "close"
     | "nextStep"
-    | ((element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void);
+    | ((
+        element?: Element,
+        step: DriveStep,
+        options: { config: Config; state: State; driver: Driver; index: number | undefined }
+      ) => void);
   // Distance between the highlighted element and the cutout. (default: 10)
   stagePadding?: number;
   // Radius of the cutout around the highlighted element. (default: 5)
@@ -95,7 +99,10 @@ type Config = {
   // PopoverDOM is an object with references to
   // the popover DOM elements such as buttons
   // title, descriptions, body, container etc.
-  onPopoverRender?: (popover: PopoverDOM, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onPopoverRender?: (
+    popover: PopoverDOM,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
 
   // Hooks to run before and after highlighting
   // each step. Each hook receives the following
@@ -136,7 +143,11 @@ type Config = {
     step: DriveStep,
     options: { config: Config; state: State; driver: Driver; index: number | undefined }
   ) => void;
-  onDestroyed?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onDestroyed?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
 
   // Hooks to run on button clicks. Each hook receives
   // the following parameters:
@@ -146,8 +157,16 @@ type Config = {
   //   - options.state: The current state of the driver
   //   - options.driver: Current driver object
   //   - options.index: Index of the currently active step
-  onNextClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
-  onPrevClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onNextClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
+  onPrevClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
   onCloseClick?: (
     element?: Element,
     step: DriveStep,
@@ -156,7 +175,11 @@ type Config = {
   // Runs when the done button (the next button on the
   // last step of a tour) is clicked. When provided, it
   // runs instead of `onNextClick` on the last step.
-  onDoneClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onDoneClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
 };
 ```
 
@@ -166,7 +189,7 @@ type Config = {
 >
 > `onNextClick` and `onPrevClick` hooks can be configured at the step level as well. When configured at the driver level, you control the navigation for all the steps. When configured at the step level, you control the navigation for that particular step only.
 >
-> `onDoneClick` lets you detect when the user finishes the tour by clicking the done button on the last step. When provided, it runs instead of `onNextClick` on the last step, and Driver.js won't destroy the tour automatically — you control teardown by calling `driverObj.destroy()` yourself. Like the other click hooks, it can be configured at the driver or step level.
+> `onDoneClick` lets you detect when the user finishes the tour by clicking the done button on the last step. When provided, it runs instead of `onNextClick` on the last step, and Driver.js won't destroy the tour automatically; you control teardown by calling `driverObj.destroy()` yourself. Like the other click hooks, it can be configured at the driver or step level.
 
 > `options.index`: Every hook receives the zero-based index of the currently active step in `options.index` (equivalent to `driverObj.getActiveIndex()`), or `undefined` when driving a single highlight rather than a `steps` array. Note that `index` always reflects the _active_ step, so inside `onDeselected` (which fires for the step being left during a transition) it points at the step being moved to, not the one being deselected.
 
@@ -228,7 +251,10 @@ type Popover = {
   // Parameter is an object with references to
   // the popover DOM elements such as buttons
   // title, descriptions, body, etc.
-  onPopoverRender?: (popover: PopoverDOM, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onPopoverRender?: (
+    popover: PopoverDOM,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
 
   // Callbacks for button clicks. You can use
   // these to add custom behavior to the buttons.
@@ -239,8 +265,16 @@ type Popover = {
   //   - options.state: The current state of the driver
   //   - options.driver: Current driver object
   //   - options.index: Index of the currently active step
-  onNextClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
-  onPrevClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onNextClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
+  onPrevClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
   onCloseClick?: (
     element?: Element,
     step: DriveStep,
@@ -248,7 +282,11 @@ type Popover = {
   ) => void;
   // Runs instead of `onNextClick` when the done button
   // (the next button on the last step) is clicked.
-  onDoneClick?: (element?: Element, step: DriveStep, options: { config: Config; state: State; driver: Driver; index: number | undefined }) => void;
+  onDoneClick?: (
+    element?: Element,
+    step: DriveStep,
+    options: { config: Config; state: State; driver: Driver; index: number | undefined }
+  ) => void;
 };
 ```
 
@@ -303,6 +341,118 @@ type DriveStep = {
     step: DriveStep,
     options: { config: Config; state: State; driver: Driver; index: number | undefined }
   ) => void;
+};
+```
+
+## Hints Configuration
+
+Hints are configured through the `hints()` factory from the `driver.js/hints` entry. See the [Hints guide](/docs/hints) for an introduction and examples; the full options are given below.
+
+```typescript
+type HintsConfig = {
+  // Array of hints to show. See the Hint
+  // Configuration section below for the format.
+  hints?: DriverHint[];
+
+  // Beacon defaults applied to every hint;
+  // a hint's own beacon values win.
+  beacon?: HintBeacon;
+
+  // Text of the dismiss button. (default: "Got it")
+  buttonText?: string;
+
+  // Custom class and offset for the hint popovers,
+  // same meaning as in tours.
+  popoverClass?: string;
+  popoverOffset?: number;
+
+  // Dim the page while a hint is open, with the hint's
+  // element cut out like a tour step. The popover then
+  // anchors to the element instead of the beacon, the
+  // open hint's beacon steps aside, and the other
+  // beacons wait under the dim. Clicking the dimmed
+  // page closes the hint. (default: false)
+  overlay?: boolean;
+  // Color and opacity of the dim. (defaults: "#000" and 0.7)
+  overlayColor?: string;
+  overlayOpacity?: number;
+
+  // Called when a hint popover is opened, and when a
+  // hint is dismissed (via the button or `dismiss()`).
+  // Each hook receives the following parameters:
+  //   - element: The hint's target DOM element
+  //   - hint: The hint object
+  //   - options.config: The hints configuration
+  //   - options.hints: The hints instance
+  onOpen?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
+  onDismiss?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
+};
+```
+
+## Hint Configuration
+
+Each entry of the `hints` array describes one hint: the element it points at, the beacon that sits on it, and the popover that opens on click.
+
+```typescript
+type DriverHint = {
+  // The element the hint points at. This can be a DOM
+  // element, a function that returns a DOM element, or
+  // a CSS selector. A hint whose element is missing is
+  // skipped, and picked up on the next show() if the
+  // element has appeared since.
+  element: Element | string | (() => Element);
+
+  // Stable identity used by open/dismiss/restore and
+  // passed to the hooks; useful for persisting
+  // dismissals. Defaults to the hint's index.
+  id?: string;
+
+  // Where the beacon sits on the element's box, and
+  // how it looks.
+  beacon?: {
+    // Edge of the element the beacon sits on. (default: "top")
+    side?: "top" | "right" | "bottom" | "left";
+    // Position along that edge. (default: "end")
+    align?: "start" | "center" | "end";
+    // Whether the beacon pulses. The pulse also pauses
+    // automatically for users who prefer reduced
+    // motion. (default: true)
+    animate?: boolean;
+    // Custom class for the beacon, e.g. to scope the
+    // --driver-hint-size and --driver-hint-color
+    // CSS variables to it.
+    className?: string;
+  };
+
+  // The popover that opens when the beacon is clicked.
+  // Rendered exactly like a tour popover.
+  popover?: {
+    title?: string;
+    description?: string;
+    side?: "top" | "right" | "bottom" | "left";
+    align?: "start" | "center" | "end";
+    popoverClass?: string;
+
+    // The dismiss button. Hide it for hints you only
+    // dismiss from code. (default: true)
+    showButton?: boolean;
+    // Overrides the instance-level buttonText.
+    buttonText?: string;
+
+    // Hook to run after the popover is rendered,
+    // same as in tours but with the hint and the
+    // hints instance in the options.
+    onPopoverRender?: (popover: PopoverDOM, options: { hint: DriverHint; hints: Hints }) => void;
+  };
+
+  // Hint-level hooks, taking precedence over the
+  // instance-level ones.
+  onOpen?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
+  onDismiss?: (element: Element, hint: DriverHint, options: { config: HintsConfig; hints: Hints }) => void;
+
+  // Arbitrary data to carry along, available wherever
+  // the hint object is.
+  data?: Record<string, any>;
 };
 ```
 
