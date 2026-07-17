@@ -1,5 +1,5 @@
-import type { DriverHook, HookOpts } from "./config";
-import { destroyDriverClick, onDriverClick } from "./events";
+import type { DriverHook, HookOpts } from "./context";
+import { destroyDriverClick, onDriverClick } from "./click";
 import { PositionOptions, repositionPopover } from "./position";
 import { bringInView, getFocusableElements } from "./utils";
 

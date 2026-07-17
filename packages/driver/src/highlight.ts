@@ -2,7 +2,7 @@ import { Context } from "./context";
 import { DriveStep } from "./driver";
 import { refreshOverlay, trackActiveElement, transitionStage } from "./overlay";
 import { hidePopover } from "./popover";
-import { renderStepPopover, repositionStepPopover } from "./step-popover";
+import { renderStepPopover, repositionStepPopover } from "./step";
 import { bringInView, isScrollable, resolveElement } from "./utils";
 
 function mountDummyElement(): Element {

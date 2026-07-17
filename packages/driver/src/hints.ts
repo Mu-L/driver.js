@@ -7,7 +7,7 @@ import {
   Side,
   hidePopover,
 } from "./popover";
-import { generateStageSvgPathString } from "./overlay";
+import { generateStageSvgPathString } from "./stage";
 import { ARROW_CORNER_INSET, PositionOptions, repositionPopover } from "./position";
 import { resolveElement } from "./utils";
 import "./hints.css";

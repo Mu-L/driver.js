@@ -1,10 +1,195 @@
-import { Config, createConfigStore, GetConfig, HookOpts } from "./config";
-import { createStateStore, GetState, SetState, State } from "./state";
-import { createEmitter, Emitter } from "./emitter";
-import type { Driver } from "./driver";
+import type { Driver, DriveStep } from "./driver";
+import type { AllowedButtons, PopoverDOM } from "./popover";
+import type { StageDefinition } from "./stage";
 
 // Per-instance config, state and emitter, threaded through the helpers so
 // nothing falls back to shared module-level state.
+
+export type HookOpts = {
+  config: Config;
+  state: State;
+  driver: Driver;
+  index: number | undefined;
+};
+
+export type DriverHook = (element: Element | undefined, step: DriveStep, opts: HookOpts) => void;
+
+export type Config = {
+  steps?: DriveStep[];
+
+  animate?: boolean;
+  duration?: number;
+  overlayColor?: string;
+  overlayOpacity?: number;
+  smoothScroll?: boolean;
+  allowClose?: boolean;
+  allowScroll?: boolean;
+  overlayClickBehavior?: "close" | "nextStep" | DriverHook;
+  stagePadding?: number;
+  stageRadius?: number;
+
+  disableActiveInteraction?: boolean;
+
+  // Skip a step whose target element is specified but missing from the DOM.
+  // Element-less steps are intentional centered steps and never skipped. (default: false)
+  skipMissingElement?: boolean;
+
+  allowKeyboardControl?: boolean;
+
+  // Popover specific configuration
+  popoverClass?: string;
+  popoverOffset?: number;
+  showButtons?: AllowedButtons[];
+  disableButtons?: AllowedButtons[];
+  showProgress?: boolean;
+
+  // Button texts
+  progressText?: string;
+  nextBtnText?: string;
+  prevBtnText?: string;
+  doneBtnText?: string;
+
+  // Called after the popover is rendered
+  onPopoverRender?: (popover: PopoverDOM, opts: HookOpts) => void;
+
+  // State based callbacks, called upon state changes
+  onHighlightStarted?: DriverHook;
+  onHighlighted?: DriverHook;
+  onDeselected?: DriverHook;
+  onDestroyStarted?: DriverHook;
+  onDestroyed?: DriverHook;
+
+  // Event based callbacks, called upon events
+  onNextClick?: DriverHook;
+  onPrevClick?: DriverHook;
+  onCloseClick?: DriverHook;
+  onDoneClick?: DriverHook;
+};
+
+export interface GetConfig {
+  (): Config;
+  <K extends keyof Config>(key: K): Config[K];
+}
+
+function createConfigStore() {
+  let currentConfig: Config = {};
+
+  function configure(config: Config = {}) {
+    currentConfig = {
+      animate: true,
+      duration: 400,
+      allowClose: true,
+      allowScroll: true,
+      overlayClickBehavior: "close",
+      overlayOpacity: 0.7,
+      smoothScroll: false,
+      disableActiveInteraction: false,
+      skipMissingElement: false,
+      showProgress: false,
+      stagePadding: 10,
+      stageRadius: 5,
+      popoverOffset: 10,
+      showButtons: ["next", "previous", "close"],
+      disableButtons: [],
+      overlayColor: "#000",
+      ...config,
+    };
+  }
+
+  const getConfig: GetConfig = (<K extends keyof Config>(key?: K) => {
+    return key ? currentConfig[key] : currentConfig;
+  }) as GetConfig;
+
+  configure();
+
+  return { getConfig, configure };
+}
+
+export type State = {
+  isInitialized?: boolean;
+
+  activeIndex?: number;
+  activeElement?: Element;
+  activeStep?: DriveStep;
+  previousElement?: Element;
+  previousStep?: DriveStep;
+
+  popover?: PopoverDOM;
+
+  // actual values considering the animation
+  // and delays. These are used to determine
+  // the positions etc.
+  __previousElement?: Element;
+  __activeElement?: Element;
+  __previousStep?: DriveStep;
+  __activeStep?: DriveStep;
+
+  __activeOnDestroyed?: Element;
+  __resizeTimeout?: number;
+  __transitionCallback?: () => void;
+  __activeStagePosition?: StageDefinition;
+  __overlaySvg?: SVGSVGElement;
+
+  __events?: {
+    onKeyup: (e: KeyboardEvent) => void;
+    onKeydown: (e: KeyboardEvent) => void;
+    onResize: () => void;
+    onScroll: () => void;
+  };
+};
+
+export interface GetState {
+  (): State;
+  <K extends keyof State>(key: K): State[K];
+}
+
+export type SetState = <K extends keyof State>(key: K, value: State[K]) => void;
+
+function createStateStore() {
+  let currentState: State = {};
+
+  const getState: GetState = (<K extends keyof State>(key?: K) => {
+    return key ? currentState[key] : currentState;
+  }) as GetState;
+
+  const setState: SetState = (key, value) => {
+    currentState[key] = value;
+  };
+
+  function resetState() {
+    currentState = {};
+  }
+
+  return { getState, setState, resetState };
+}
+
+type allowedEvents =
+  | "overlayClick"
+  | "escapePress"
+  | "nextClick"
+  | "prevClick"
+  | "closeClick"
+  | "arrowRightPress"
+  | "arrowLeftPress";
+
+function createEmitter() {
+  let registeredListeners: Partial<{ [key in allowedEvents]: () => void }> = {};
+
+  function listen(hook: allowedEvents, callback: () => void) {
+    registeredListeners[hook] = callback;
+  }
+
+  function emit(hook: allowedEvents) {
+    registeredListeners[hook]?.();
+  }
+
+  function reset() {
+    registeredListeners = {};
+  }
+
+  return { listen, emit, reset };
+}
+
 export type Context = {
   getConfig: GetConfig;
   setConfig: (config?: Config) => void;
@@ -13,8 +198,8 @@ export type Context = {
   setState: SetState;
   resetState: () => void;
 
-  listen: Emitter["listen"];
-  emit: Emitter["emit"];
+  listen: (hook: allowedEvents, callback: () => void) => void;
+  emit: (hook: allowedEvents) => void;
   resetEmitter: () => void;
 
   getDriver: () => Driver;

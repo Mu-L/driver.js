@@ -1,0 +1,186 @@
+import type { Context, DriverHook } from "./context";
+import type { DriveStep } from "./driver";
+import { AllowedButtons, destroyPopover, PopoverRenderOptions, renderPopover } from "./popover";
+import { PositionOptions, repositionPopover } from "./position";
+
+// Bridges the tour and the popover primitive: a step's popover resolves here
+// against the instance config (step value first, then the global default, then
+// the built-in fallback). The primitive itself never reads config or state.
+
+const DEFAULT_PROGRESS_TEXT = "{{current}} of {{total}}";
+
+// On the final step the next button acts as the done button, so a dedicated
+// onDoneClick takes precedence over onNextClick when provided.
+export function resolveNextHook(ctx: Context, step?: DriveStep): DriverHook | undefined {
+  const steps = ctx.getConfig("steps") || [];
+  const activeIndex = ctx.getState("activeIndex");
+  const isLastStep = activeIndex !== undefined && activeIndex === steps.length - 1;
+
+  const onDoneClick = step?.popover?.onDoneClick || ctx.getConfig("onDoneClick");
+  if (isLastStep && onDoneClick) {
+    return onDoneClick;
+  }
+
+  return step?.popover?.onNextClick || ctx.getConfig("onNextClick");
+}
+
+export function resolvePrevHook(ctx: Context, step?: DriveStep): DriverHook | undefined {
+  return step?.popover?.onPrevClick || ctx.getConfig("onPrevClick");
+}
+
+export function resolveCloseHook(ctx: Context, step?: DriveStep): DriverHook | undefined {
+  return step?.popover?.onCloseClick || ctx.getConfig("onCloseClick");
+}
+
+// Default button actions passed in by the tour, which alone knows how to
+// navigate and destroy; a hook from the step or the config wins over them.
+export type TourStepDefaults = {
+  onNextClick: DriverHook;
+  onPrevClick: DriverHook;
+  onCloseClick: DriverHook;
+};
+
+// The resolved step is what ends up in state and what the lifecycle hooks
+// receive, not just what gets rendered.
+export function resolveTourStep(ctx: Context, stepIndex: number, defaults: TourStepDefaults): DriveStep {
+  const steps = ctx.getConfig("steps") || [];
+  const step = steps[stepIndex];
+  const popover = step.popover || {};
+
+  const hasNextStep = !!steps[stepIndex + 1];
+  const hasPreviousStep = !!steps[stepIndex - 1];
+
+  const doneBtnText = popover.doneBtnText || ctx.getConfig("doneBtnText") || "Done";
+  const allowsClosing = ctx.getConfig("allowClose");
+  const showProgress =
+    typeof popover.showProgress !== "undefined" ? popover.showProgress : ctx.getConfig("showProgress");
+  const progressText = popover.progressText || ctx.getConfig("progressText") || DEFAULT_PROGRESS_TEXT;
+  const progressTextReplaced = progressText
+    .replace("{{current}}", `${stepIndex + 1}`)
+    .replace("{{total}}", `${steps.length}`);
+
+  const configuredButtons = popover.showButtons || ctx.getConfig("showButtons");
+  const calculatedButtons: AllowedButtons[] = [
+    "next",
+    "previous",
+    ...(allowsClosing ? ["close" as AllowedButtons] : []),
+  ].filter(b => {
+    return !configuredButtons?.length || configuredButtons.includes(b as AllowedButtons);
+  }) as AllowedButtons[];
+
+  const onNextClick = popover.onNextClick || ctx.getConfig("onNextClick");
+  const onPrevClick = popover.onPrevClick || ctx.getConfig("onPrevClick");
+  const onCloseClick = popover.onCloseClick || ctx.getConfig("onCloseClick");
+
+  return {
+    ...step,
+    popover: {
+      showButtons: calculatedButtons,
+      nextBtnText: !hasNextStep ? doneBtnText : undefined,
+      disableButtons: [...(!hasPreviousStep ? ["previous" as AllowedButtons] : [])],
+      showProgress,
+      onNextClick: onNextClick ? onNextClick : defaults.onNextClick,
+      onPrevClick: onPrevClick ? onPrevClick : defaults.onPrevClick,
+      onCloseClick: onCloseClick ? onCloseClick : defaults.onCloseClick,
+      ...popover,
+      progressText: progressTextReplaced,
+    },
+  };
+}
+
+function resolveStepPosition(ctx: Context, element: Element, step: DriveStep): PositionOptions {
+  const stagePadding = ctx.getConfig("stagePadding") || 0;
+
+  return {
+    side: step.popover?.side || "bottom",
+    align: step.popover?.align || "start",
+    // The popover clears the highlight cutout (stagePadding) plus the
+    // configured gap between the two.
+    offset: stagePadding + (ctx.getConfig("popoverOffset") || 0),
+    padding: stagePadding,
+    // Without a real element the tour highlights a dummy element at the center
+    // of the screen, and the popover is centered over it like a modal.
+    centered: element.id === "driver-dummy-element",
+  };
+}
+
+function resolveStepPopover(ctx: Context, element: Element, step: DriveStep): PopoverRenderOptions {
+  const popover = step.popover || {};
+
+  const steps = ctx.getConfig("steps") || [];
+  const activeIndex = ctx.getState("activeIndex");
+  const isDoneStep = activeIndex !== undefined && activeIndex === steps.length - 1;
+
+  return {
+    title: popover.title,
+    description: popover.description,
+
+    showButtons: popover.showButtons || ctx.getConfig("showButtons")!,
+    disableButtons: popover.disableButtons || ctx.getConfig("disableButtons")! || [],
+    showProgress: popover.showProgress || ctx.getConfig("showProgress") || false,
+
+    progressText: popover.progressText ?? (ctx.getConfig("progressText") || DEFAULT_PROGRESS_TEXT),
+    nextBtnText: popover.nextBtnText ?? (ctx.getConfig("nextBtnText") || "Next"),
+    prevBtnText: popover.prevBtnText ?? (ctx.getConfig("prevBtnText") || "Previous"),
+
+    doneButton: isDoneStep,
+
+    popoverClass: popover.popoverClass || ctx.getConfig("popoverClass") || "",
+    smoothScroll: ctx.getConfig("smoothScroll"),
+
+    // The hooks are resolved when the button is clicked rather than up front,
+    // so a setConfig() between render and click is still picked up.
+    onNextClick: () => {
+      const onNextClick = resolveNextHook(ctx, step);
+      if (onNextClick) {
+        return onNextClick(element, step, ctx.getHookOpts());
+      }
+
+      return ctx.emit("nextClick");
+    },
+
+    onPrevClick: () => {
+      const onPrevClick = resolvePrevHook(ctx, step);
+      if (onPrevClick) {
+        return onPrevClick(element, step, ctx.getHookOpts());
+      }
+
+      return ctx.emit("prevClick");
+    },
+
+    onCloseClick: () => {
+      const onCloseClick = resolveCloseHook(ctx, step);
+      if (onCloseClick) {
+        return onCloseClick(element, step, ctx.getHookOpts());
+      }
+
+      return ctx.emit("closeClick");
+    },
+
+    onRender: popoverDom => {
+      // Commit the popover to state before the user hook runs; the hook's
+      // opts.state.popover has always pointed at the freshly rendered popover.
+      ctx.setState("popover", popoverDom);
+
+      const onPopoverRender = popover.onPopoverRender || ctx.getConfig("onPopoverRender");
+      onPopoverRender?.(popoverDom, ctx.getHookOpts());
+    },
+
+    position: resolveStepPosition(ctx, element, step),
+  };
+}
+
+export function renderStepPopover(ctx: Context, element: Element, step: DriveStep) {
+  destroyPopover(ctx.getState("popover"));
+
+  renderPopover(element, resolveStepPopover(ctx, element, step));
+}
+
+export function repositionStepPopover(ctx: Context, element: Element, step: DriveStep) {
+  const popover = ctx.getState("popover");
+  if (!popover) {
+    return;
+  }
+
+  repositionPopover(popover, element, resolveStepPosition(ctx, element, step));
+}

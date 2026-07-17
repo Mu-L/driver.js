@@ -1,13 +1,7 @@
 import { easeInOutQuad } from "./utils";
-import { destroyDriverClick, onDriverClick } from "./events";
+import { destroyDriverClick, onDriverClick } from "./click";
 import { Context } from "./context";
-
-export type StageDefinition = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+import { generateStageSvgPathString, StageDefinition } from "./stage";
 
 // This method calculates the animated new position of the
 // stage (called for each frame by requestAnimationFrame)
@@ -148,33 +142,6 @@ function createOverlaySvg(ctx: Context, stage: StageDefinition): SVGSVGElement {
   svg.appendChild(stagePath);
 
   return svg;
-}
-
-// The full-screen dim with a rounded cutout, as a single evenodd path. Pure:
-// the tour passes its stagePadding/stageRadius, the hints overlay its own.
-export function generateStageSvgPathString(stage: StageDefinition, options: { padding: number; radius: number }) {
-  const windowX = window.innerWidth;
-  const windowY = window.innerHeight;
-
-  const stagePadding = options.padding;
-  const stageRadius = options.radius;
-
-  const stageWidth = stage.width + stagePadding * 2;
-  const stageHeight = stage.height + stagePadding * 2;
-
-  // prevent glitches when stage is too small for radius
-  const limitedRadius = Math.min(stageRadius, stageWidth / 2, stageHeight / 2);
-
-  // no value below 0 allowed + round down
-  const normalizedRadius = Math.floor(Math.max(limitedRadius, 0));
-
-  const highlightBoxX = stage.x - stagePadding + normalizedRadius;
-  const highlightBoxY = stage.y - stagePadding;
-  const highlightBoxWidth = stageWidth - normalizedRadius * 2;
-  const highlightBoxHeight = stageHeight - normalizedRadius * 2;
-
-  return `M${windowX},0L0,0L0,${windowY}L${windowX},${windowY}L${windowX},0Z
-    M${highlightBoxX},${highlightBoxY} h${highlightBoxWidth} a${normalizedRadius},${normalizedRadius} 0 0 1 ${normalizedRadius},${normalizedRadius} v${highlightBoxHeight} a${normalizedRadius},${normalizedRadius} 0 0 1 -${normalizedRadius},${normalizedRadius} h-${highlightBoxWidth} a${normalizedRadius},${normalizedRadius} 0 0 1 -${normalizedRadius},-${normalizedRadius} v-${highlightBoxHeight} a${normalizedRadius},${normalizedRadius} 0 0 1 ${normalizedRadius},-${normalizedRadius} z`;
 }
 
 export function destroyOverlay(ctx: Context) {

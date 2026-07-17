@@ -1,16 +1,15 @@
-import { AllowedButtons, destroyPopover, Popover } from "./popover";
+import { destroyPopover, Popover } from "./popover";
 import { destroyOverlay } from "./overlay";
 import { destroyEvents, initEvents, requireRefresh } from "./events";
-import { Config, DriverHook } from "./config";
-import { createContext } from "./context";
+import { Config, createContext, DriverHook } from "./context";
 import { destroyHighlight, highlight } from "./highlight";
+import { resolveNextHook, resolvePrevHook, resolveTourStep } from "./step";
 import { resolveElement } from "./utils";
 import "./driver.css";
 
 // Re-export the public types so they remain part of the package's type surface.
-export type { Config, DriverHook } from "./config";
-export type { State } from "./state";
-export type { StageDefinition } from "./overlay";
+export type { Config, DriverHook, State } from "./context";
+export type { StageDefinition } from "./stage";
 export type { Popover, PopoverDOM, Side, Alignment, AllowedButtons } from "./popover";
 
 export type DriveStep = {
@@ -81,15 +80,7 @@ export function driver(options: Config = {}): Driver {
       const activeStep = ctx.getState("activeStep");
       const activeElement = ctx.getState("activeElement");
 
-      const steps = ctx.getConfig("steps") || [];
-      const isLastStep = ctx.getState("activeIndex") === steps.length - 1;
-      const onDoneClick = activeStep?.popover?.onDoneClick || ctx.getConfig("onDoneClick");
-      if (isLastStep && onDoneClick) {
-        onDoneClick(activeElement, activeStep!, ctx.getHookOpts());
-        return;
-      }
-
-      const onNextClick = activeStep?.popover?.onNextClick || ctx.getConfig("onNextClick");
+      const onNextClick = resolveNextHook(ctx, activeStep);
       if (onNextClick) {
         onNextClick(activeElement, activeStep!, ctx.getHookOpts());
         return;
@@ -157,7 +148,7 @@ export function driver(options: Config = {}): Driver {
       return;
     }
 
-    const onPrevClick = activeStep.popover?.onPrevClick || ctx.getConfig("onPrevClick");
+    const onPrevClick = resolvePrevHook(ctx, activeStep);
     if (onPrevClick) {
       return onPrevClick(activeElement, activeStep, ctx.getHookOpts());
     }
@@ -178,14 +169,7 @@ export function driver(options: Config = {}): Driver {
       return;
     }
 
-    const steps = ctx.getConfig("steps") || [];
-    const isLastStep = activeIndex === steps.length - 1;
-    const onDoneClick = activeStep.popover?.onDoneClick || ctx.getConfig("onDoneClick");
-    if (isLastStep && onDoneClick) {
-      return onDoneClick(activeElement, activeStep, ctx.getHookOpts());
-    }
-
-    const onNextClick = activeStep.popover?.onNextClick || ctx.getConfig("onNextClick");
+    const onNextClick = resolveNextHook(ctx, activeStep);
     if (onNextClick) {
       return onNextClick(activeElement, activeStep, ctx.getHookOpts());
     }
@@ -256,63 +240,25 @@ export function driver(options: Config = {}): Driver {
     ctx.setState("activeIndex", stepIndex);
 
     const hasNextStep = steps[stepIndex + 1];
-    const hasPreviousStep = steps[stepIndex - 1];
 
-    const doneBtnText = currentStep.popover?.doneBtnText || ctx.getConfig("doneBtnText") || "Done";
-    const allowsClosing = ctx.getConfig("allowClose");
-    const showProgress =
-      typeof currentStep.popover?.showProgress !== "undefined"
-        ? currentStep.popover?.showProgress
-        : ctx.getConfig("showProgress");
-    const progressText =
-      currentStep.popover?.progressText || ctx.getConfig("progressText") || "{{current}} of {{total}}";
-    const progressTextReplaced = progressText
-      .replace("{{current}}", `${stepIndex + 1}`)
-      .replace("{{total}}", `${steps.length}`);
-
-    const configuredButtons = currentStep.popover?.showButtons || ctx.getConfig("showButtons");
-    const calculatedButtons: AllowedButtons[] = [
-      "next",
-      "previous",
-      ...(allowsClosing ? ["close" as AllowedButtons] : []),
-    ].filter(b => {
-      return !configuredButtons?.length || configuredButtons.includes(b as AllowedButtons);
-    }) as AllowedButtons[];
-
-    const onNextClick = currentStep.popover?.onNextClick || ctx.getConfig("onNextClick");
-    const onPrevClick = currentStep.popover?.onPrevClick || ctx.getConfig("onPrevClick");
-    const onCloseClick = currentStep.popover?.onCloseClick || ctx.getConfig("onCloseClick");
-
-    highlight(ctx, {
-      ...currentStep,
-      popover: {
-        showButtons: calculatedButtons,
-        nextBtnText: !hasNextStep ? doneBtnText : undefined,
-        disableButtons: [...(!hasPreviousStep ? ["previous" as AllowedButtons] : [])],
-        showProgress: showProgress,
-        onNextClick: onNextClick
-          ? onNextClick
-          : () => {
-              if (!hasNextStep) {
-                destroy();
-              } else {
-                drive(stepIndex + 1);
-              }
-            },
-        onPrevClick: onPrevClick
-          ? onPrevClick
-          : () => {
-              drive(stepIndex - 1);
-            },
-        onCloseClick: onCloseClick
-          ? onCloseClick
-          : () => {
-              destroy();
-            },
-        ...(currentStep?.popover || {}),
-        progressText: progressTextReplaced,
-      },
-    });
+    highlight(
+      ctx,
+      resolveTourStep(ctx, stepIndex, {
+        onNextClick: () => {
+          if (!hasNextStep) {
+            destroy();
+          } else {
+            drive(stepIndex + 1);
+          }
+        },
+        onPrevClick: () => {
+          drive(stepIndex - 1);
+        },
+        onCloseClick: () => {
+          destroy();
+        },
+      })
+    );
   }
 
   function destroy(withOnDestroyStartedHook = true) {
