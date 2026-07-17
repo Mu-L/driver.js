@@ -22,10 +22,15 @@ Alternatively, you can use CDN and include the script in your HTML file:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css" />
+
+<!-- Only if you use hints -->
+<script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/hints.iife.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/hints.css" />
 ```
 
 ## Start Using
+
 Once installed, you can import the package in your project. The following example shows how to highlight an element:
 
 ```js
@@ -37,9 +42,16 @@ driverObj.highlight({
   element: "#some-element",
   popover: {
     title: "Title",
-    description: "Description"
-  }
+    description: "Description",
+  },
 });
+```
+
+[Hints](/docs/hints) ship as their own entry with a self-contained stylesheet, so import them only when you use them:
+
+```js
+import { hints } from "driver.js/hints";
+import "driver.js/dist/hints.css";
 ```
 
 ### Note on CDN
@@ -55,9 +67,15 @@ driverObj.highlight({
   element: "#some-element",
   popover: {
     title: "Title",
-    description: "Description"
-  }
+    description: "Description",
+  },
 });
+```
+
+The hints build exposes its own global:
+
+```js
+const hints = window.driverHints.hints;
 ```
 
 Continue reading the [Getting Started](/docs/basic-usage) guide to learn more about the package.
