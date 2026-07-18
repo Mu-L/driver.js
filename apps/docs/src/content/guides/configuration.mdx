@@ -443,6 +443,11 @@ type DriverHint = {
     side?: "top" | "right" | "bottom" | "left";
     // Position along that edge. (default: "end")
     align?: "start" | "center" | "end";
+    // Nudge the beacon in pixels from its anchor point.
+    // Positive moves right/down, negative left/up.
+    // (default: 0)
+    offsetX?: number;
+    offsetY?: number;
     // Whether the beacon pulses. The pulse also pauses
     // automatically for users who prefer reduced
     // motion. (default: true)
