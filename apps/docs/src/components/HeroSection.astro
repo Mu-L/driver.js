@@ -235,6 +235,9 @@ import Container from "./Container.astro";
             },
           ],
         });
+      } else {
+        // Re-running the demo brings every hint back, even dismissed ones.
+        heroHints.restoreAll();
       }
 
       heroHints.show();
@@ -253,7 +256,7 @@ import Container from "./Container.astro";
       });
     };
 
-    const tourButton = document.querySelector("[data-demo-tour]");
+    const tourButton = document.querySelector<HTMLElement>("[data-demo-tour]");
     if (tourButton) {
       tourButton.addEventListener("click", () => {
         closeMenu();

@@ -105,6 +105,7 @@ export interface Hints {
   close: () => void;
   dismiss: (id: string | number) => void;
   restore: (id: string | number) => void;
+  restoreAll: () => void;
   setHints: (hints: DriverHint[]) => void;
   getHints: () => DriverHint[];
   getActive: () => DriverHint | undefined;
@@ -528,6 +529,14 @@ export function hints(config: HintsConfig = {}): Hints {
     mountHint(list[index], key);
   }
 
+  // Bring back every dismissed hint at once; the bulk counterpart to restore().
+  function restoreAll() {
+    dismissed.clear();
+    if (isVisible) {
+      mountHints();
+    }
+  }
+
   function refresh() {
     mounted.forEach(positionBeacon);
 
@@ -598,6 +607,7 @@ export function hints(config: HintsConfig = {}): Hints {
     close,
     dismiss,
     restore,
+    restoreAll,
     setHints,
     getHints: () => currentConfig.hints || [],
     getActive: () => (activeId ? find(activeId)?.hint : undefined),

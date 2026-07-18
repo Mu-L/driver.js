@@ -647,6 +647,30 @@ describe("dismissing", () => {
     expect(beacons()).toHaveLength(2);
   });
 
+  it("brings every dismissed hint back with restoreAll()", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS });
+    productHints.show();
+    productHints.dismiss("intro");
+    productHints.dismiss("card");
+    expect(beacons()).toHaveLength(0);
+
+    productHints.restoreAll();
+
+    expect(beacons()).toHaveLength(2);
+  });
+
+  it("clears dismissals for the next show() when hidden", () => {
+    const productHints = createHints({ hints: SAMPLE_HINTS });
+    productHints.show();
+    productHints.dismiss("intro");
+    productHints.hide();
+
+    productHints.restoreAll();
+    productHints.show();
+
+    expect(beacons()).toHaveLength(2);
+  });
+
   it("ignores restore() for a hint that was never dismissed", () => {
     const productHints = createHints({ hints: SAMPLE_HINTS });
     productHints.show();

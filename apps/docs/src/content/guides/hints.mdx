@@ -277,6 +277,7 @@ productHints.open("export");  // open a hint's popover programmatically
 productHints.close();         // close the open popover, keeping its beacon
 productHints.dismiss("export");  // dismiss a hint, firing onDismiss
 productHints.restore("export");  // bring a dismissed hint back
+productHints.restoreAll();       // bring every dismissed hint back
 productHints.setHints([...]); // replace the hints; resets dismissals
 productHints.getHints();      // the configured hints
 productHints.getActive();     // the hint whose popover is open, if any
