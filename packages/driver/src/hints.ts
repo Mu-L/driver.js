@@ -30,6 +30,12 @@ export type HintBeacon = {
   align?: Alignment;
   animate?: boolean;
   className?: string;
+
+  // Nudge the beacon in pixels from its computed anchor point. Positive
+  // offsetX moves it right, negative left; positive offsetY moves it down,
+  // negative up. Handy for fine-tuning placement on large or irregular targets.
+  offsetX?: number;
+  offsetY?: number;
 };
 
 export type HintPopover = {
@@ -173,7 +179,7 @@ export function hints(config: HintsConfig = {}): Hints {
   // The beacon is centered on its anchor point by CSS, so this only has to
   // find the point itself.
   function positionBeacon(entry: MountedHint) {
-    const { side = "top", align = "end" } = beaconConfig(entry.hint);
+    const { side = "top", align = "end", offsetX = 0, offsetY = 0 } = beaconConfig(entry.hint);
     const rect = entry.element.getBoundingClientRect();
 
     let top: number;
@@ -187,8 +193,8 @@ export function hints(config: HintsConfig = {}): Hints {
       top = align === "start" ? rect.top : align === "center" ? rect.top + rect.height / 2 : rect.bottom;
     }
 
-    entry.beacon.style.top = `${top}px`;
-    entry.beacon.style.left = `${left}px`;
+    entry.beacon.style.top = `${top + offsetY}px`;
+    entry.beacon.style.left = `${left + offsetX}px`;
   }
 
   // Hide the beacon when its element scrolls out of view (or out of a

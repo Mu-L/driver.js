@@ -159,7 +159,7 @@ describe("beacon positioning", () => {
   // Element box: 200x20 at (400, 400).
   const ELEMENT_BOX = { top: 400, left: 400, right: 600, bottom: 420, width: 200, height: 20 };
 
-  function positionFor(beacon?: { side?: DriverHint["beacon"] extends infer B ? any : never; align?: any }) {
+  function positionFor(beacon?: DriverHint["beacon"]) {
     const el = document.querySelector<HTMLElement>("#intro")!;
     el.getBoundingClientRect = () => rect(ELEMENT_BOX);
 
@@ -212,6 +212,13 @@ describe("beacon positioning", () => {
     ],
   ] as const)("anchors the beacon for %o", (beacon, expected) => {
     expect(positionFor(beacon)).toEqual(expected);
+  });
+
+  it("nudges the beacon by offsetX and offsetY", () => {
+    expect(positionFor({ side: "top", align: "end", offsetX: 12, offsetY: -8 })).toEqual({
+      top: "392px",
+      left: "612px",
+    });
   });
 
   it("repositions the beacons on scroll", async () => {

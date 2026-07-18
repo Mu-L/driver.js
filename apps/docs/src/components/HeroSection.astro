@@ -5,12 +5,12 @@ import Container from "./Container.astro";
 <div class="bg-white border-b border-gray-200 select-none">
   <Container>
     <div class="flex items-center justify-between h-16">
-      <a href="/" class="flex items-center justify-end text-xl font-bold text-gray-900 font-semibold gap-2.5">
+      <a href="/" data-nav-logo class="flex items-center justify-end text-xl font-bold text-gray-900 font-semibold gap-2.5">
         <img src="/mascot-head.png" alt="driver.js logo" width="900" height="775" class="h-10 w-auto" />
         driver.js
       </a>
       <span class="flex items-center gap-3">
-        <a href="/docs/installation" class="rounded-lg px-3 py-1.5 text-base font-medium text-gray-900 transition-colors hover:bg-gray-100">
+        <a href="/docs/installation" data-nav-docs class="rounded-lg px-3 py-1.5 text-base font-medium text-gray-900 transition-colors hover:bg-gray-100">
           <span class="hidden sm:inline">Documentation</span>
           <span class="inline sm:hidden">Docs</span>
         </a>
@@ -33,12 +33,38 @@ import Container from "./Container.astro";
           product.
         </p>
         <div class="mt-4 md:mt-8 lg:mt-10 flex flex-col sm:flex-row gap-4 items-stretch">
-          <button
-            data-demo-tour
-            class="cursor-pointer rounded-2xl border-2 border-black bg-gray-800 px-7 py-2.5 md:py-3 text-lg md:text-xl font-semibold text-white shadow-[5px_5px_0_0_#000] transition-all hover:bg-gray-700 active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_#000] focus:outline-none focus-visible:outline-none"
-          >
-            Show Demo
-          </button>
+          <div class="relative" data-demo-split>
+            <div
+              class="flex items-stretch overflow-hidden rounded-2xl border-2 border-black bg-gray-800 text-white shadow-[5px_5px_0_0_#000] transition-all active:translate-x-[3px] active:translate-y-[3px] active:shadow-[2px_2px_0_0_#000]"
+            >
+              <button
+                data-demo-tour
+                class="cursor-pointer px-7 py-2.5 md:py-3 text-lg md:text-xl font-semibold hover:bg-gray-700 focus:outline-none focus-visible:outline-none"
+              >
+                Show Demo
+              </button>
+              <button
+                data-demo-menu-toggle
+                type="button"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Choose a demo"
+                class="flex cursor-pointer items-center border-l-2 border-black px-3 hover:bg-gray-700 focus:outline-none focus-visible:outline-none"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div
+              data-demo-menu
+              class="fixed z-50 hidden w-56 overflow-hidden rounded-xl border-2 border-black bg-white shadow-[4px_4px_0_0_#000]"
+            >
+              <button data-demo-item="tour" type="button" class="block w-full cursor-pointer px-4 py-2.5 text-left text-base font-medium text-black hover:bg-yellow-200">Product tour</button>
+              <button data-demo-item="hints" type="button" class="block w-full cursor-pointer border-t-2 border-black px-4 py-2.5 text-left text-base font-medium text-black hover:bg-yellow-200">Feature hints</button>
+              <button data-demo-item="highlight" type="button" class="block w-full cursor-pointer border-t-2 border-black px-4 py-2.5 text-left text-base font-medium text-black hover:bg-yellow-200">Simple highlight</button>
+            </div>
+          </div>
           <a
             href="/docs/installation"
             data-docs-link
@@ -54,3 +80,208 @@ import Container from "./Container.astro";
     </div>
   </Container>
 </div>
+
+<style is:global>
+  .hero-hint-beacon {
+    --driver-hint-size: 30px;
+  }
+
+  .driver-popover.hero-hint-popover {
+    background-color: #ffffff;
+    color: #111827;
+    border-radius: 14px;
+    box-shadow:
+      0 14px 34px rgba(17, 24, 39, 0.18),
+      0 2px 6px rgba(17, 24, 39, 0.08);
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-title {
+    color: #111827;
+    font-weight: 600;
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-description {
+    color: rgba(17, 24, 39, 0.66);
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-close-btn {
+    color: rgba(17, 24, 39, 0.55);
+  }
+  .driver-popover.hero-hint-popover .driver-popover-close-btn:hover {
+    color: #111827;
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-footer-btn {
+    background-color: #4f46e5;
+    color: #ffffff;
+    border: none;
+    border-radius: 9px;
+    text-shadow: none;
+    font-weight: 400;
+    font-size: 13px;
+    padding: 9px 20px;
+    box-shadow: none;
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-footer-btn:hover {
+    background-color: #4338ca;
+  }
+
+  .driver-popover.hero-hint-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+    border-left-color: #ffffff;
+  }
+  .driver-popover.hero-hint-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+    border-right-color: #ffffff;
+  }
+  .driver-popover.hero-hint-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+    border-top-color: #ffffff;
+  }
+  .driver-popover.hero-hint-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+    border-bottom-color: #ffffff;
+  }
+</style>
+
+<script>
+  import { driver } from "driver.js";
+  import "driver.js/dist/driver.css";
+  import { hints } from "driver.js/hints";
+  import "driver.js/dist/hints.css";
+
+  const split = document.querySelector("[data-demo-split]");
+  if (split) {
+    const toggle = split.querySelector("[data-demo-menu-toggle]");
+    const menu = split.querySelector("[data-demo-menu]");
+
+    const closeMenu = () => {
+      menu.classList.add("hidden");
+      toggle.setAttribute("aria-expanded", "false");
+    };
+    const positionMenu = () => {
+      const rect = split.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 8}px`;
+      menu.style.left = `${rect.left}px`;
+    };
+    const openMenu = () => {
+      positionMenu();
+      menu.classList.remove("hidden");
+      toggle.setAttribute("aria-expanded", "true");
+    };
+
+    toggle.addEventListener("click", event => {
+      event.stopPropagation();
+      if (menu.classList.contains("hidden")) {
+        openMenu();
+        return;
+      }
+      closeMenu();
+    });
+
+    document.addEventListener("click", event => {
+      if (!split.contains(event.target)) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    });
+
+    window.addEventListener("scroll", closeMenu, { passive: true });
+    window.addEventListener("resize", closeMenu);
+
+    let heroHints = null;
+    const runHints = () => {
+      if (!heroHints) {
+        heroHints = hints({
+          popoverClass: "hero-hint-popover",
+          beacon: { className: "hero-hint-beacon" },
+          hints: [
+            {
+              element: "[data-nav-logo]",
+              id: "logo",
+              beacon: { side: "bottom", align: "end" },
+              popover: {
+                description:
+                  "<img src='/fox-looking.gif' alt='' style='display:block;width:100px;height:100px;margin:0 auto 20px;' />A pulsing beacon marks a spot and opens a popover when clicked.",
+                side: "bottom",
+                align: "start",
+                showButton: false,
+              },
+            },
+            {
+              element: "[data-nav-docs]",
+              id: "docs",
+              beacon: { side: "bottom", align: "start" },
+              popover: {
+                title: "Read the docs",
+                description: "Full guides for tours, highlights, and hints.",
+                side: "bottom",
+                align: "start",
+                buttonText: "Read the docs",
+              },
+            },
+            {
+              element: "[data-docs-link]",
+              id: "get-started",
+              beacon: { side: "top", align: "end" },
+              popover: {
+                title: "No overlay",
+                description: "The page stays fully interactive while a hint is open.",
+                side: "top",
+                align: "end",
+              },
+            },
+          ],
+        });
+      }
+
+      heroHints.show();
+    };
+
+    const runHighlight = () => {
+      const driverObj = driver({ popoverClass: "driverjs-theme" });
+      driverObj.highlight({
+        element: "[data-driver-tagline]",
+        popover: {
+          title: "Simple highlight",
+          description: "Spotlight a single element with a popover, no tour required.",
+          side: "bottom",
+          align: "start",
+        },
+      });
+    };
+
+    const tourButton = document.querySelector("[data-demo-tour]");
+    if (tourButton) {
+      tourButton.addEventListener("click", () => {
+        closeMenu();
+      });
+    }
+
+    const tourItem = split.querySelector('[data-demo-item="tour"]');
+    if (tourItem && tourButton) {
+      tourItem.addEventListener("click", () => {
+        closeMenu();
+        tourButton.click();
+      });
+    }
+
+    const hintsItem = split.querySelector('[data-demo-item="hints"]');
+    if (hintsItem) {
+      hintsItem.addEventListener("click", () => {
+        closeMenu();
+        runHints();
+      });
+    }
+
+    const highlightItem = split.querySelector('[data-demo-item="highlight"]');
+    if (highlightItem) {
+      highlightItem.addEventListener("click", () => {
+        closeMenu();
+        runHighlight();
+      });
+    }
+  }
+</script>

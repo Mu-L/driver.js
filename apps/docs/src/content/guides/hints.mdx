@@ -1,20 +1,18 @@
 ---
 title: "Hints"
 description: "Add pulsing hint beacons to your UI with Driver.js. Users click a beacon to open a popover explaining the feature. No tour, no overlay, and the page stays fully interactive."
-groupTitle: "Introduction"
+groupTitle: "Examples"
 sort: 6
 ---
 
 import { HintsSample } from "../../components/HintsSample.tsx";
 
-Tours walk users through your product step by step. Hints do the opposite: they
-sit quietly on the page as pulsing beacons, and the user decides which ones to
-open, in any order, whenever they want. There is no overlay and nothing is
-blocked. The page stays fully interactive.
+Hints are pulsing beacons that sit on the page. The user clicks one to open a
+popover, in any order, with no overlay and nothing blocked, so the page stays
+interactive.
 
-Hints ship as their own entry, so tour-only users never load them. Import the
-module and its stylesheet. The stylesheet is self-contained, so you don't need
-`driver.css` unless you also use tours:
+They ship as their own entry with a self-contained stylesheet, so tour-only
+users never load them and you don't need `driver.css` unless you also use tours:
 
 ```js
 import { hints } from "driver.js/hints";
@@ -22,8 +20,8 @@ import "driver.js/dist/hints.css";
 ```
 
 Each hint points at an element and describes it with the same popover you know
-from tours. The demo below also turns on the optional overlay, which
-spotlights the element while its hint is open:
+from tours. The demo below also turns on the optional overlay, which spotlights
+the element while its hint is open:
 
 <HintsSample
   buttonText="Show Hints"
@@ -121,6 +119,18 @@ A beacon sits on one of twelve anchor points of its element's box: a `side`
 The default is the top-right corner. Set `animate: false` for a static dot;
 the pulse also pauses automatically for users who prefer reduced motion.
 
+When an anchor point lands a little off, nudge the beacon in pixels with
+`offsetX` and `offsetY`. Positive `offsetX` moves it right and negative left;
+positive `offsetY` moves it down and negative up. This is handy for large or
+irregular targets, such as an illustration whose focus is not at a box edge:
+
+```js
+const hint = {
+  element: "#dashboard",
+  beacon: { side: "top", align: "end", offsetX: -12, offsetY: 8 },
+};
+```
+
 Size and colour come from CSS variables:
 
 ```css
@@ -190,7 +200,7 @@ const productHints = hints({
   hints: [],
 
   // Defaults applied to every hint's beacon; a hint's own values win.
-  beacon: { side: "top", align: "end", animate: true, className: "" },
+  beacon: { side: "top", align: "end", offsetX: 0, offsetY: 0, animate: true, className: "" },
 
   // Text of the dismiss button. Defaults to "Got it".
   buttonText: "Got it",
@@ -228,7 +238,7 @@ const hint = {
   id: "export",
 
   // Where the beacon sits on the element's box, and how it looks.
-  beacon: { side: "top", align: "end", animate: true, className: "" },
+  beacon: { side: "top", align: "end", offsetX: 0, offsetY: 0, animate: true, className: "" },
 
   popover: {
     title: "Export your data",
